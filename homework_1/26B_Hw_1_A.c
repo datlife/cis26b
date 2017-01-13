@@ -27,7 +27,12 @@ typedef struct
     int   final;
 } STUDENT;
 
-void insertionSort (STUDENT  list[], STUDENT *pLast);
+
+void insertionSort 	   (STUDENT  list[], STUDENT *pLast);
+
+void insertionSortFinal(STUDENT list[], STUDENT *pLast);
+
+void printer		   (STUDENT  list[], STUDENT *pLast, char format_description[]);
 
 int main (void)
 {
@@ -113,6 +118,4 @@ void insertionSort (STUDENT  list[], STUDENT *pLast)
  Lopez, Sophia                    83   78   95
  Smith, Olivia                    91   89   86
  Taylor, Noah                     85   94   92
-
-
 */
