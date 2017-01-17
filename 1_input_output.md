@@ -59,7 +59,7 @@ printf(" %p \n", p); \\ &a : address of a
 printf(" %p \n", &p);\\ &p : address of p
 ```
 
-### Pointer Variable
+#### Pointer Variable
 ```
 int a = 10;
 int b;
