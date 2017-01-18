@@ -15,6 +15,7 @@
 #include <stdlib.h>
 
 #define MAX_LEN 25
+
 typedef struct{
     char *name; 
     int   shares;    
@@ -23,8 +24,8 @@ typedef struct{
 STOCK *read_file (char  *filename, int *arr_size);
 void   save_file (char  *filename, STOCK file[]);
 void   sortByName(STOCK list[], int size);
-void   printList(STOCK list[], char format[]);
-
+void   printList(const STOCK *list, char format[]);
+int    found_duplicate(char stock_name[], const STOCK *list, int size);
 
 int main(void)
 {
@@ -37,7 +38,7 @@ int main(void)
 
     if (stock_arr){
 	// Sort List by Name [Insertion Sort]
-    	sortByName(stock_arr, *arr_size);
+    	sortByName(stock_arr, arr_size);
 
 	// Display to screen
 	char* format = "%-25s %10d";
@@ -52,37 +53,44 @@ int main(void)
 STOCK *read_file (char  *filename, int *arr_size){
 	
 	// Local variables
-	FILE *fp;
-	STOCK *input = NULL;
-	int size = 0;
+	FILE  *fp;
+	STOCK *arr_stock = NULL;
+	int    size = 0;
 
 	//Open a file
 	fp = fopen(filename, "r+");
-
+	
 	if (!fp){
-		printf("File not found\n");
-        exit(101);
-	}
+	    printf("File not found\n");
+       "::exit(101);
+    }
 
     // Make sure we are at first pos
     rewind(fp);
 
     // Read the first line
-    if ( fscanf(fp,"%d", size) == 0){
+    int count = 0;
+    if ( fscanf(fp,"%d", &count) == 0){
         printf("Cannot get number of lines\n");
         exit(101);
     }
-    for (int i = 0; i < size; i++)
+    for (int i = 0; i < count; i++)
     {
-        char *stock_name;
+        char  stock_name[MAX_LEN];
         int   stock_shares;
         // %*c to discard \n: end of line
-        if ( (fscanf(fp,"%s %d%*c", stock_name, stock_shares)) != EOF)
+        if ( (fscanf(fp,"%s %d \n", stock_name, &stock_shares)) != EOF)
         {
             // Compare with previous stock
-
-            // If not found, create new stock
-
+	    printf("%-7s %-5d\n", stock_name, stock_shares);
+            // Check if there is a duplicate stock name
+	    int dup_pos = found_duplicate(stock_name, arr_stock, size);
+	    if (dup_pos > -1)
+		arr_stock[dup_pos]->shares += stock_shares;
+	    else{
+		
+	    }
+	
             // If found , add num_shares
         }
         else
@@ -91,7 +99,7 @@ STOCK *read_file (char  *filename, int *arr_size){
     fclose(fp);
     printf("%d", *arr_size);
 
-	return input;
+    return input;
 }
 void   save_file (char  *filename, STOCK file[]){
 
@@ -101,4 +109,27 @@ void   sortByName(STOCK list[], int size){
 }
 void   printList(STOCK list[], char format[]){
 
+}
+/*===============================================================
+ * found_duplicate()
+ * ==============================================================
+ * check if current stock input has already created before
+ * 	Pre: name	 : name of current stock
+ * 	     arr_stock   : list of stocks
+ * 	     size        : size of list
+ *	Post: 0 - is Not existed
+ *	      n - a number - position where existed stock is found
+ */
+int   found_duplicate(char name[], const STOCK *arrStock, int size){
+
+	if (size == 0 ) return 0;
+	
+	int found = -1;
+	for (int i = 0; i < size; i++){
+	    if ( strcmp(name, arrStock->name) == 0){
+		found_duplicate = i;
+		break;
+	    }
+	}
+	return found;
 }
