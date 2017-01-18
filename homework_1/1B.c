@@ -13,9 +13,8 @@
 */
 #include <stdio.h>
 #include <stdlib.h>
-#include <conio.h>
-#define MAX_LEN 25
 
+#define MAX_LEN 25
 typedef struct{
     char *name; 
     int   shares;    
@@ -31,10 +30,10 @@ int main(void)
 {
     char  *input_file  = "in.txt";
     char  *output_file = "out.txt";
-    int   *arr_size    =  NULL;    
+    int    arr_size    =  0;    
     STOCK *stock_arr   =  NULL;
 
-    stock_arr = read_file(input_file, arr_size);
+    stock_arr = read_file(input_file, &arr_size);
 
     if (stock_arr){
 	// Sort List by Name [Insertion Sort]
@@ -55,20 +54,42 @@ STOCK *read_file (char  *filename, int *arr_size){
 	// Local variables
 	FILE *fp;
 	STOCK *input = NULL;
-	int arr_size = 0;
+	int size = 0;
 
 	//Open a file
 	fp = fopen(filename, "r+");
+
 	if (!fp){
 		printf("File not found\n");
-		return NULL;
+        exit(101);
 	}
 
     // Make sure we are at first pos
     rewind(fp);
-    // Read the first line
-    
 
+    // Read the first line
+    if ( fscanf(fp,"%d", size) == 0){
+        printf("Cannot get number of lines\n");
+        exit(101);
+    }
+    for (int i = 0; i < size; i++)
+    {
+        char *stock_name;
+        int   stock_shares;
+        // %*c to discard \n: end of line
+        if ( (fscanf(fp,"%s %d%*c", stock_name, stock_shares)) != EOF)
+        {
+            // Compare with previous stock
+
+            // If not found, create new stock
+
+            // If found , add num_shares
+        }
+        else
+            break;
+    }
+    fclose(fp);
+    printf("%d", *arr_size);
 
 	return input;
 }
