@@ -13,48 +13,49 @@ Save the output as a comment at the end of the program!
 */
 #include <stdio.h>
 #include <stdlib.h>
+#include <ctype.h>   // used in toupper()
 #include <string.h>
+#include <errno.h>
 
 #define MAX_LEN 25
+#define INPUT_PATH  "./in.txt"
+#define OUTPUT_PATH "./out.txt"
+#define FORMAT_DESC "%-7s %5d\n"
+#define FLUSH       while(getchar() != '\n')
 
 typedef struct {
 	char  name[MAX_LEN];
 	int   shares;
 } STOCK;
 
+
 STOCK *read_file(char  *filename, int *arr_size);
-void   save_file(char  *filename, STOCK file[]);
-void   sortByName(STOCK list[], int size);
-void   printList(char title[], const STOCK *list, int size, char format[]);
+void   save_file(char  *filename, STOCK *file, int size);
+void   print_list(char title[], const STOCK *list, int size, char format[]);
+
+// Helper functions
+void   sort_by_name(STOCK *new_stock, STOCK *list, int size);
 int    found_duplicate(char stock_name[], const STOCK *list, int size);
+void   write_data(FILE *fp, char *filename, STOCK* list, int size);
 
 int main(void)
 {
 	int    arr_size = 0;
-	char  *input_file = "in.txt";
-	char  *output_file = "out.txt";
-	STOCK *stock_arr = NULL;
-	// Read input file
-	stock_arr = read_file(input_file, &arr_size);
+	STOCK *arr_stock = NULL;
 
-	if (stock_arr) {
-		// Sort List by Name [Insertion Sort]
-		// sortByName(stock_arr, arr_size);
-		// Display to screen
-		char* format = "%-7s %5d\n";
-		printList("Stock Summary", stock_arr, arr_size, format);
-
-		// Save file into output_file
-		//save_file(output_file, stock_arr);
+	arr_stock = read_file(INPUT_PATH, &arr_size);						 // Read input file 
+	if (arr_stock) {
+		print_list("Stock Summary", arr_stock, arr_size, FORMAT_DESC);   // Display to screen
+		save_file(OUTPUT_PATH, arr_stock, arr_size);					 // Save file into output_file
+		free(arr_stock);												 // Release memory
 	}
-	//RELEASE MEMORY
 	return 0;
 }
 
 /*===============================================================
 * read_file()
 * ===============================================================
-* Read input file
+* Read input file and sorted data while reading input
 * 	Pre: filename	 : name of current stock
 * 	     arr_size    : number of stocks in the list
 *
@@ -62,44 +63,54 @@ int main(void)
 */
 STOCK *read_file(char  *filename, int *arr_size) {
 	// Declare local variables
-	FILE  *fp;
 	int    size = 0;
+	FILE  *fp;
+	STOCK *arr_stock = NULL;
+
 	//Open a file
-	fp = fopen(filename, "r+");
-	if (!fp) {
+	if (!(fp = fopen(filename, "r+"))){
 		printf("File not found\n");
 		exit(101);
 	}
-	rewind(fp); 									// Make sure we are at first pos
+
 	int count = 0;  								// store the loop counts = number of lines in file
+	rewind(fp); 									// Make sure we are at first pos
 	if (fscanf(fp, "%d", &count) == 0) {
 		printf("Cannot get number of lines\n");
 		exit(101);
 	}
 	// Dynamic Allocation arr_stock 
-	STOCK *arr_stock = (STOCK*)calloc(count, sizeof(STOCK));
-	//temp
+	arr_stock = (STOCK*)calloc(count, sizeof(STOCK));
+
+	// Temp variables
 	char  stock_name[MAX_LEN];
 	int   stock_shares;
-	for (int i = 0; i < count; i++) {
 
-		if ((fscanf(fp, "%s %d \n", stock_name, &stock_shares)) != EOF) {
+	for (int i = 0; i < count; i++) {
+		if ((fscanf(fp, "%s %d \n", stock_name, &stock_shares)) != EOF) {   // Stop at the end of file
 			int pos = found_duplicate(stock_name, arr_stock, size);			// Check if there is a duplicate stock name
 			if (pos > -1)
 				arr_stock[pos].shares += stock_shares;
 			else {
-				//perform insertion short here if possible
-				strcpy(arr_stock[size].name, stock_name);
-				arr_stock[size].shares = stock_shares;
+				STOCK temp;
+				strcpy(temp.name, stock_name);
+				temp.shares = stock_shares;
+				//// Insertion sort
+				sort_by_name(&temp, arr_stock, size);
+				//strcpy(arr_stock[size].name, stock_name);
+				//arr_stock[size].shares = stock_shares;
 				size++;
 			}
 		}
 		else
 			break;
-		//Copye size of list to arr_size
+		//Copy size of list to arr_size
 		*arr_size = size;
 	}
-	fclose(fp);
+	if (fclose(fp) == EOF){
+		printf("Error closing file %s", filename);
+		exit(201);
+	}
 	return arr_stock;
 }
 /*===============================================================
@@ -108,27 +119,96 @@ STOCK *read_file(char  *filename, int *arr_size) {
 * Create an output file
 * 	Pre: filepath	 : full path to outputfile
 * 	     file        : array of STOCKs
-
 *	Post: create an ouputfile
 */
-void   save_file(char  *filename, STOCK file[]) {
+void   save_file(char  *filename, STOCK *file, int size) {
 	// Open file in writing mode, remmber using wx
-	// copy data to file
+	FILE  *fp;
+	//Open a file
+	fp = fopen(filename, "r");
+	if (!fp) {
+		write_data(fp, filename, file, size);
+	}
+	else{ // File is existed
+		char choice;
+		while (1){
+			printf("File %s is existed. Do you want to overwrite? (y/n)", filename);
+			scanf("%c", &choice);
+			if (toupper(choice) == 'Y'){
+				write_data(fp, filename, file, size); 
+				break;
+			}
+			else if (toupper(choice) == 'N') break;
+			else {
+				printf("\nInvalid choice. Please type again\n");
+				FLUSH;
+			}
+		}	
+	}
+	if (fclose(fp) == EOF){
+		printf("Error closing file %s", filename);
+		exit(201);
+	}
 }
 /*===============================================================
-* sortByName()
+* write_data()
 * ===============================================================
-* Sort list by Stock name using Insertion Sort
-* 	Pre: list	 : array of STOCKs
-* 	     size    : size of array
+* To avoid write codes twice in save_file().
+*	Post: write data to a file
+*/
+void   write_data(FILE *fp, char *filename, STOCK* file, int size){
+	fp = fopen(filename, "w");
+	fprintf(fp, "%d\n", size);
+	for (int i = 0; i < size; i++){
+		fprintf(fp, "%-6s %-4d\n", file->name, file->shares);
+		file++;
+	}
+	printf("\nFile is saved to %s\n", filename);
+}
 
+/*===============================================================
+* sort_by_name()
+* ===============================================================
+* Add and new stock to sorted list.
+* 	Pre: list	 : array of STOCKs
+*	     size    : size of array
 *	Post: sorted array
 */
-void   sortByName(STOCK list[], int size) {
-
+void   sort_by_name(STOCK *new_stock, STOCK *list, int size) {
+	if (size == 0){
+		strcpy(list[0].name, new_stock->name);
+		list[0].shares = new_stock->shares;
+	}
+	else{
+		STOCK *p_walk = list;
+		while(p_walk != (list + size))
+		{
+			if (strcmp(new_stock->name, p_walk->name) <= 0){
+				STOCK p_prev;
+				STOCK temp;
+				strcpy(p_prev.name, p_walk->name); p_prev.shares = p_walk->shares;			
+				// Move every element to the
+				for (STOCK *p_curr = p_walk + 1; p_curr != (list + size + 1); p_curr++){
+					strcpy(temp.name, p_curr->name); temp.shares = p_curr->shares;	
+					strcpy(p_curr->name, p_prev.name); p_curr->shares = p_prev.shares;
+					strcpy(p_prev.name, temp.name); p_prev.shares = temp.shares;   											
+				}
+				// Copy new stock
+				strcpy(p_walk->name, new_stock->name);
+				p_walk->shares = new_stock->shares;
+				break;
+			}
+			p_walk++;			
+		}
+		if (p_walk == list + size){
+			// Copy new stock
+			strcpy(p_walk->name, new_stock->name);
+			p_walk->shares = new_stock->shares;
+		}
+	}
 }
 /*===============================================================
-* printList()
+* print_list()
 * ===============================================================
 * Display an array of Stocks
 * 	Pre: title   : title of ouput result
@@ -137,7 +217,7 @@ list	 : array of STOCKs
 format  : format description used in printf(format,..)
 *	Post: sorted array
 */
-void   printList(char title[], const STOCK *list, int size, char format[]) {
+void   print_list(char title[], const STOCK *list, int size, char format[]) {
 	printf("\n%s\n\n", title);
 	for (int i = 0; i < size; i++)
 		printf(format, list[i].name, list[i].shares);
@@ -146,12 +226,14 @@ void   printList(char title[], const STOCK *list, int size, char format[]) {
 /*===============================================================
 * found_duplicate()
 * ===============================================================
-* check if current stock input has already created before
-* 	Pre: name	 : name of current stock
+* Validate if stock input has already created before.
+
+* 	Pre: name		 : name of current stock
 * 	     arr_stock   : list of stocks
 * 	     size        : size of list
+
 *	Post: 0 - is Not existed
-*	      n - a number - position where existed stock is found
+*	      n - position where existed stock is found
 */
 int   found_duplicate(char name[], const STOCK *arrStock, int size) {
 
