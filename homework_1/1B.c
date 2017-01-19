@@ -28,7 +28,6 @@ typedef struct {
 	int   shares;
 } STOCK;
 
-
 STOCK *read_file(char  *filename, int *arr_size);
 void   save_file(char  *filename, STOCK *file, int size);
 void   print_list(char title[], const STOCK *list, int size, char format[]);
@@ -93,12 +92,9 @@ STOCK *read_file(char  *filename, int *arr_size) {
 				arr_stock[pos].shares += stock_shares;
 			else {
 				STOCK temp;
-				strcpy(temp.name, stock_name);
-				temp.shares = stock_shares;
-				//// Insertion sort
+				strcpy(temp.name, stock_name); temp.shares = stock_shares;
+				// Add new stock to current sorted list.
 				sort_by_name(&temp, arr_stock, size);
-				//strcpy(arr_stock[size].name, stock_name);
-				//arr_stock[size].shares = stock_shares;
 				size++;
 			}
 		}
@@ -126,10 +122,10 @@ void   save_file(char  *filename, STOCK *file, int size) {
 	FILE  *fp;
 	//Open a file
 	fp = fopen(filename, "r");
-	if (!fp) {
+	if (!fp) { // File is not created yet
 		write_data(fp, filename, file, size);
 	}
-	else{ // File is existed
+	else{     // File is existed
 		char choice;
 		while (1){
 			printf("File %s is existed. Do you want to overwrite? (y/n)", filename);
@@ -181,17 +177,17 @@ void   sort_by_name(STOCK *new_stock, STOCK *list, int size) {
 	}
 	else{
 		STOCK *p_walk = list;
-		while(p_walk != (list + size))
-		{
+		while(p_walk != (list + size)){
 			if (strcmp(new_stock->name, p_walk->name) <= 0){
 				STOCK p_prev;
-				STOCK temp;
-				strcpy(p_prev.name, p_walk->name); p_prev.shares = p_walk->shares;			
-				// Move every element to the
+				strcpy(p_prev.name, p_walk->name); p_prev.shares = p_walk->shares;
+				// Shift array by one element
 				for (STOCK *p_curr = p_walk + 1; p_curr != (list + size + 1); p_curr++){
-					strcpy(temp.name, p_curr->name); temp.shares = p_curr->shares;	
+					// Swapping
+					STOCK temp;
+					strcpy(temp.name, p_curr->name);   temp.shares = p_curr->shares;	
 					strcpy(p_curr->name, p_prev.name); p_curr->shares = p_prev.shares;
-					strcpy(p_prev.name, temp.name); p_prev.shares = temp.shares;   											
+					strcpy(p_prev.name, temp.name);    p_prev.shares = temp.shares;   											
 				}
 				// Copy new stock
 				strcpy(p_walk->name, new_stock->name);
