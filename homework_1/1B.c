@@ -43,7 +43,7 @@ void   print_list(char title[], const STOCK *list, int size, char format[]);
 
 // Helper functions
 char  *get_input(char *message);
-void   sort_by_name(STOCK *new_stock, STOCK *list, int size);
+void   sort_by_name(STOCK *list, int size);
 int    found_duplicate(char stock_name[], const STOCK *list, int size);
 void   write_data(FILE *fp, char *filename, STOCK* list, int size);
 
@@ -52,10 +52,11 @@ int main(void)
 	int    arr_size = 0;
 	STOCK *arr_stock = NULL;
 	char  *input_file = get_input(INPUT_PROMPT);
-
 	arr_stock = read_file(input_file, &arr_size);						 // Read input file 
+
 	if (arr_stock) {
 		print_list("Stock Summary", arr_stock, arr_size, FORMAT_DESC);   // Display to screen
+		sort_by_name(arr_stock, arr_size);
 		char  *output_file = get_input(OUTPUT_PROMPT);
 		save_file(output_file, arr_stock, arr_size);					 // Save file into output_file
 		free(arr_stock);												 // Release memory
@@ -94,8 +95,6 @@ STOCK *read_file(char  *filename, int *arr_size) {
 		printf("File %s not found\n", INPUT_PATH);
 		exit(101);
 	}
-
-
 	int count = 0;  								// store the loop counts = number of lines in file
 	rewind(fp); 									// Make sure we are at first pos
 	if (fscanf(fp, "%d", &count) == 0) {
@@ -111,22 +110,15 @@ STOCK *read_file(char  *filename, int *arr_size) {
 
 	for (int i = 0; i < count; i++) {
 		if ((fscanf(fp, "%s %d \n", stock_name, &stock_shares)) != EOF) {   // Stop at the end of file
-			int pos = found_duplicate(stock_name, arr_stock, size);			// Check if there is a duplicate stock name
-			if (pos > -1)
-				arr_stock[pos].shares += stock_shares;
-			else {
-				STOCK temp;
-				strcpy(temp.name, stock_name); temp.shares = stock_shares;
-				// Add new stock to current sorted list.
-				sort_by_name(&temp, arr_stock, size);
-				size++;
-			}
+			// Copy input to array
+			strcpy(arr_stock[size].name, stock_name); arr_stock[size].shares = stock_shares;
+			size++;
 		}
 		else
 			break;
-		//Copy size of list to arr_size
 		*arr_size = size;
 	}
+	// Close the file
 	if (fclose(fp) == EOF) {
 		printf("Error closing file %s", filename);
 		exit(201);
@@ -182,7 +174,7 @@ void   save_file(char  *filename, STOCK *file, int size) {
 /*===============================================================
 * write_data()
 * ===============================================================
-* Helper function for save_file().
+* Helper function for save_file(). 
 * To avoid write codes twice in
 *	Post: write data to a file
 */
@@ -203,7 +195,7 @@ void   write_data(FILE *fp, char *filename, STOCK* file, int size) {
 *	     size    : size of array
 *	Post: sorted array
 */
-void   sort_by_name(STOCK *new_stock, STOCK *list, int size) {
+void   sort_by_name(STOCK *list, int size){
 	STOCK* p_walk = NULL;
 	// Looping through ary to find where to insert new stock
 	for (p_walk = list; p_walk < list + size; p_walk++){
@@ -214,16 +206,13 @@ void   sort_by_name(STOCK *new_stock, STOCK *list, int size) {
 			for (STOCK *p_curr = p_walk + 1; p_curr != (list + size + 1); p_curr++) {
 				// Swapping
 				STOCK temp;
-				temp = *p_curr;
+				temp	= *p_curr;
 				*p_curr = *p_prev;
 				*p_prev = temp;
 			}
 			break;
 		}
 	}
-	// Copy new stock
-	strcpy(p_walk->name, new_stock->name);
-	p_walk->shares = new_stock->shares;
 }
 
 /*===============================================================
@@ -239,7 +228,6 @@ void   sort_by_name(STOCK *new_stock, STOCK *list, int size) {
 *				 n > 0- position where existed stock is found
 */
 int   found_duplicate(char name[], const STOCK *arrStock, int size) {
-
 	if (size == 0) return -1;
 	int found = -1;
 	for (int i = 0; i < size; i++) {
