@@ -204,43 +204,28 @@ void   write_data(FILE *fp, char *filename, STOCK* file, int size) {
 *	Post: sorted array
 */
 void   sort_by_name(STOCK *new_stock, STOCK *list, int size) {
-	STOCK *p_walk = list;
-	while (p_walk != (list + size)) {
+	STOCK* p_walk = NULL;
+	// Looping through ary to find where to insert new stock
+	for (p_walk = list; p_walk < list + size; p_walk++){
+		// Found a pos to insert stock
 		if (strcmp(new_stock->name, p_walk->name) <= 0) {
-			STOCK p_prev;
-			strcpy(p_prev.name, p_walk->name); p_prev.shares = p_walk->shares;
-			// Shift array by one element
+			// Shift array by one element to create space for new stock
+			STOCK *p_prev = p_walk;
 			for (STOCK *p_curr = p_walk + 1; p_curr != (list + size + 1); p_curr++) {
 				// Swapping
 				STOCK temp;
-				strcpy(temp.name, p_curr->name);   temp.shares = p_curr->shares;
-				strcpy(p_curr->name, p_prev.name); p_curr->shares = p_prev.shares;
-				strcpy(p_prev.name, temp.name);    p_prev.shares = temp.shares;
+				temp = *p_curr;
+				*p_curr = *p_prev;
+				*p_prev = temp;
 			}
 			break;
 		}
-		p_walk++;
 	}
 	// Copy new stock
 	strcpy(p_walk->name, new_stock->name);
 	p_walk->shares = new_stock->shares;
 }
-/*===============================================================
-* print_list()
-* ===============================================================
-* Display an array of Stocks
-* 	Pre:  title   : title of ouput result
-*		  list	 : array of STOCKs
-* 	      size    : size of array
-*         format  : format description used in printf(format,..)
-*	Post: Display array to console screen
-*/
-void   print_list(char title[], const STOCK *list, int size, char format[]) {
-	printf("\n%s\n\n", title);
-	for (int i = 0; i < size; i++)
-		printf(format, list[i].name, list[i].shares);
-	printf("\n");
-}
+
 /*===============================================================
 * found_duplicate()
 * ===============================================================
@@ -265,7 +250,22 @@ int   found_duplicate(char name[], const STOCK *arrStock, int size) {
 	}
 	return found;
 }
-
+/*===============================================================
+* print_list()
+* ===============================================================
+* Display an array of Stocks
+* 	Pre:  title   : title of ouput result
+*		  list	 : array of STOCKs
+* 	      size    : size of array
+*         format  : format description used in printf(format,..)
+*	Post: Display array to console screen
+*/
+void   print_list(char title[], const STOCK *list, int size, char format[]) {
+	printf("\n%s\n\n", title);
+	for (int i = 0; i < size; i++)
+		printf(format, list[i].name, list[i].shares);
+	printf("\n");
+}
 /*===============================================================
 * get_input()
 * ===============================================================
