@@ -22,9 +22,13 @@ Save the output as a comment at the end of the program!
 #endif
 
 #define MAX_LEN 25
-#define INPUT_PATH  "./in.txt"
-#define OUTPUT_PATH "./out.txt"
-#define FORMAT_DESC "%-7s %5d\n"
+#define INPUT_PATH   "./in.txt"
+#define INPUT_PROMPT "Enter your input file (or press Enter for default choice):"
+
+#define OUTPUT_PATH   "./out.txt"
+#define OUTPUT_PROMPT "Enter your output file (or press Enter for default choice):"
+
+#define FORMAT_DESC  "%-7s %5d\n"
 #define FLUSH       while(getchar() != '\n')
 
 
@@ -47,18 +51,20 @@ int main(void)
 {
 	int    arr_size = 0;
 	STOCK *arr_stock = NULL;
-	char  *input_file = get_input("Enter your input file (or press Enter for default choice):");
+	char  *input_file = get_input(INPUT_PROMPT);
+
 	arr_stock = read_file(input_file, &arr_size);						 // Read input file 
 	if (arr_stock) {
 		print_list("Stock Summary", arr_stock, arr_size, FORMAT_DESC);   // Display to screen
-		char  *output_file = get_input("Enter your output file (or press Enter for default choice):");
+		char  *output_file = get_input(OUTPUT_PROMPT);
 		save_file(output_file, arr_stock, arr_size);					 // Save file into output_file
 		free(arr_stock);												 // Release memory
 		free(output_file);
 	}
 	free(input_file);
+
 #ifdef _MSC_VER
-	printf(_CrtDumpMemoryLeaks() ? "Memory Leak\n" : "No Memory Leak\n");
+	printf(_CrtDumpMemoryLeaks() ? "Memory Leak\n" : "\nNo Memory Leak\n");
 #endif
 	return 0;
 }
@@ -176,7 +182,8 @@ void   save_file(char  *filename, STOCK *file, int size) {
 /*===============================================================
 * write_data()
 * ===============================================================
-* To avoid write codes twice in save_file().
+* Helper function for save_file().
+* To avoid write codes twice in
 *	Post: write data to a file
 */
 void   write_data(FILE *fp, char *filename, STOCK* file, int size) {
@@ -191,7 +198,7 @@ void   write_data(FILE *fp, char *filename, STOCK* file, int size) {
 /*===============================================================
 * sort_by_name()
 * ===============================================================
-* Add and new stock to sorted list.
+* Add new stock to sorted list.
 * 	Pre: list	 : array of STOCKs
 *	     size    : size of array
 *	Post: sorted array
@@ -222,11 +229,11 @@ void   sort_by_name(STOCK *new_stock, STOCK *list, int size) {
 * print_list()
 * ===============================================================
 * Display an array of Stocks
-* 	Pre: title   : title of ouput result
-list	 : array of STOCKs
-* 	     size    : size of array
-format  : format description used in printf(format,..)
-*	Post: sorted array
+* 	Pre:  title   : title of ouput result
+*		  list	 : array of STOCKs
+* 	      size    : size of array
+*         format  : format description used in printf(format,..)
+*	Post: Display array to console screen
 */
 void   print_list(char title[], const STOCK *list, int size, char format[]) {
 	printf("\n%s\n\n", title);
@@ -242,9 +249,9 @@ void   print_list(char title[], const STOCK *list, int size, char format[]) {
 * 	Pre: name		 : name of current stock
 * 	     arr_stock   : list of stocks
 * 	     size        : size of list
-
-*	Post: 0 - is Not existed
-*	      n - position where existed stock is found
+*
+*	Post: return 0    - is not duplicated
+*				 n > 0- position where existed stock is found
 */
 int   found_duplicate(char name[], const STOCK *arrStock, int size) {
 
@@ -258,6 +265,15 @@ int   found_duplicate(char name[], const STOCK *arrStock, int size) {
 	}
 	return found;
 }
+
+/*===============================================================
+* get_input()
+* ===============================================================
+* Prompt message and return user input
+* 	Pre: message : a message to print
+
+*	Post: char* : address of dynamic allocated string
+*/
 char *get_input(char *message) {
 	char *fname = (char*)malloc(MAX_LEN);
 	printf(message);
