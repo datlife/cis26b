@@ -17,11 +17,16 @@ Save the output as a comment at the end of the program!
 #include <string.h>
 #include <errno.h>
 
+#ifdef _MSC_VER
+#include <crtdbg.h>  // needed to check for memory leaks (Windows only!)
+#endif
+
 #define MAX_LEN 25
 #define INPUT_PATH  "./in.txt"
 #define OUTPUT_PATH "./out.txt"
 #define FORMAT_DESC "%-7s %5d\n"
 #define FLUSH       while(getchar() != '\n')
+
 
 typedef struct {
 	char  name[MAX_LEN];
@@ -42,18 +47,19 @@ int main(void)
 {
 	int    arr_size = 0;
 	STOCK *arr_stock = NULL;
-
-
 	char  *input_file = get_input("Enter your input file (or press Enter for default choice):");
-
 	arr_stock = read_file(input_file, &arr_size);						 // Read input file 
 	if (arr_stock) {
 		print_list("Stock Summary", arr_stock, arr_size, FORMAT_DESC);   // Display to screen
-
 		char  *output_file = get_input("Enter your output file (or press Enter for default choice):");
 		save_file(output_file, arr_stock, arr_size);					 // Save file into output_file
 		free(arr_stock);												 // Release memory
+		free(output_file);
 	}
+	free(input_file);
+#ifdef _MSC_VER
+	printf(_CrtDumpMemoryLeaks() ? "Memory Leak\n" : "No Memory Leak\n");
+#endif
 	return 0;
 }
 
