@@ -1,5 +1,5 @@
 
-### CIS29 - malloc()
+### CIS 26B - malloc()
 January 12, 2017
 
 [MD Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet)

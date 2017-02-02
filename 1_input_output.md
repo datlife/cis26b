@@ -1,6 +1,6 @@
 [MD Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet)
 ---
-### CIS29 - Intput/Output
+### CIS 26B - Intput/Output
 January 12, 2017
 
 #### Display Numbers

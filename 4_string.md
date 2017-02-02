@@ -1,4 +1,4 @@
-### CIS29 - String
+### CIS 26B - String
 January 17, 2017
 
 [MD Cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet)
