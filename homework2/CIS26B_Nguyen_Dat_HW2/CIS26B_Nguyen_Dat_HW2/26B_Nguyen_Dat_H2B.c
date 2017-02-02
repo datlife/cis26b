@@ -22,6 +22,10 @@ IDE (compiler): Visual Studio 2015
 #define FLUSH          while(getchar() != '\n')
 #define SENTINEL_NODE  "\177"
 
+#ifdef _MSC_VER
+#include <crtdbg.h>  // needed to check for memory leaks (Windows only!)
+#endif
+
 typedef struct list_node  NODE;
 typedef struct stack_node STACK_NODE;
 
@@ -49,64 +53,49 @@ typedef struct {
 	int    size;
 }HEAD;
 
+
 typedef enum{ Descending, Ascending }Direction;
 
 int main(void){
 //==========================FUNCTION PROTOTYPES==========================//
 	NODE  *read_file(char  *filename, int *size, NODE **stack);
 	char  *get_input(char *message);
-
+	void   display(NODE *list, Direction);
 	void   print_manager(NODE *list);
 	void   search_manager(NODE *list);
-
-	void   print_list(NODE *first, NODE *last, Direction);
-
+	void   _print(NODE *first, NODE *last, Direction);
 //-------------STACK OPERATIONS-----------------//
 	STACK_NODE *push(STACK_NODE *stack, double quote);
 	STACK_NODE *pop(STACK_NODE **stack);
-
+	void		destroy_stack(STACK_NODE * stack);
 //------------LINKED-LIST OPERATIONS -----------//
 	NODE *get_node(NODE **stack); 
 	NODE *init_list(NODE **stack);
 	NODE *locate_node(NODE *list, char *name);
 	int   insert(STOCK data, NODE *list, NODE **stack);
 	int   delete(NODE *list, NODE **stack);
-
-
+	void  destroy_list(NODE *list);
 //========================== MAIN FUNCTIONS =============================//
 	NODE* stack = NULL; // keep track of deleted nodes - for practice
 	HEAD  head;
-
 	char  *input = get_input(INPUT_PROMPT);
 	head.list = read_file(input, &head.size, &stack);
 
-	// ASCENDING ORDER
-	printf("\nAscending order\n");
-	NODE *tmp = head.list->next;
-	while (strcmp(tmp->name, SENTINEL_NODE)){
-		printf("%-5s : %-7.3f\n", tmp->name, tmp->stack->quotes);
-		tmp = tmp->next;
-	}
-
-	// DESCENDING ORDER
-	printf("\nDescending order\n");
-	tmp = head.list->prev;
-	while (strcmp(tmp->name, SENTINEL_NODE)){
-		printf("%-5s : %-7.2f\n", tmp->name, tmp->stack->quotes);
-		tmp = tmp->prev;
-	}
-
-	//Print sub-list
-	print_manager(head.list);
-
-	//Search manager
-
+	display(head.list, Ascending);	// Display in Ascending Order
+	display(head.list, Descending); // Display in Desceding Order
+	print_manager(head.list);		//Print sub-list
+	search_manager(head.list);		//Search manager
 	// Free memory
+//	destroy_list(head.list);
 
+#ifdef _MSC_VER
+	printf(_CrtDumpMemoryLeaks() ? "Memory Leak\n" : "\nNo Memory Leak\n");
+#endif
+
+	int wait = scanf("Exiting program: ", &wait);
 	return 0;
 }
-/*
-
+/*================================ FUNCTION DECLARATIONS ======================//
 
 */
 NODE *read_file(char  *filename, int *list_size, NODE **stack){
@@ -147,10 +136,9 @@ NODE *read_file(char  *filename, int *list_size, NODE **stack){
 
 	return list;
 }
-void   print_list(NODE *first, NODE *last, Direction direction){
+void   _print(NODE *first, NODE *last, Direction direction){
 	switch (direction){
-		case Ascending://Using p->next
-			{						
+		case Descending:{			//Using p->next			
 				NODE *tmp = first;
 				while (tmp != last){
 					if (strcmp(tmp->name, SENTINEL_NODE) != 0)
@@ -160,8 +148,7 @@ void   print_list(NODE *first, NODE *last, Direction direction){
 				printf("%-*s ", MAX_LEN, tmp->name);
 			}
 			break;
-		case Descending://Using p->prev
-			{						
+		case Ascending:{			//Using p->prev			
 				NODE *tmp = first;
 				while (tmp != last){
 					if (strcmp(tmp->name, SENTINEL_NODE)!= 0)
@@ -179,7 +166,7 @@ void   print_list(NODE *first, NODE *last, Direction direction){
 }
 NODE *locate_node(NODE *list, char *target){
 	NODE *pWalk = list->next;
-	while (list->name != SENTINEL_NODE){
+	while (strcmp(pWalk->name,SENTINEL_NODE) != 0){
 		if (strcmp(pWalk->name, target) == 0)
 			return pWalk;
 		pWalk = pWalk->next;
@@ -198,25 +185,28 @@ void   print_manager(NODE *list){
 		// Get user input
 		printf("Enter first stock: ");				gets(first_stock);
 		printf("Enter second stock: ");				gets(second_stock);
-		printf("Ascending - 0 or Descending - 1:"); gets(print_type);
+		printf("Descending - 0 or Ascending - 1:"); gets(print_type);
 
 		Direction direction = *print_type - 48; // -48 in order to convert char to numeric value (ASCII table)
 		if ((direction != Descending) && (direction != Ascending)){
 			printf("\nPlease only enter 0 or 1 for print direction.\n");
 		}
+		else {
+			printf("\nResult\n\n%s to %s: ", first_stock, second_stock);
+			//Return null if not found
+			NODE *start_node = locate_node(list, first_stock);
+			NODE *end_node = locate_node(list, second_stock);
 
-		printf("\nResult\n\n%s to %s: ", first_stock, second_stock);
-		//Return null if not found
-		NODE *first_node = locate_node(list, first_stock);
-		NODE *second_node = locate_node(list , second_stock);
-
-		// Display sublist
-		if (first_node && second_node)
-			print_list(first_node, second_node, direction);
-		else{		// One of two stock inputs is not found or both 
-			if (first_node == NULL)  printf("%s ", first_stock);
-			if (second_node == NULL) printf(", %s", second_stock);
-			printf(" - Not Found\n");
+			// Display sublist
+			if (start_node && end_node)
+				_print(start_node, end_node, direction);
+			else {		// One of two stock inputs is not found or both 
+				if (start_node == NULL)
+					printf("%s ", first_stock);
+				if (end_node == NULL)
+					printf("%s", second_stock);
+				printf(" - Not Found\n");
+			}
 		}
 	} while (printf("\nWould you like to print again? (Y)"), gets(condition),
 			 ((toupper(condition[0]) == 'Y') && strlen(condition) == 1));
@@ -224,26 +214,63 @@ void   print_manager(NODE *list){
 }
 void search_manager(NODE *list){
 	char stock[MAX_LEN];
-
 	char condition[MAX_LEN];
-
-	printf("\n\n====================== Search Manager============================");
+	printf("\n\n====================== Search Manager ============================");
 	do{
 		printf("\n\n");
 		// Get user input
-		printf("Enter stock name: "); gets(stock);
+		printf("Enter stock name (or quit): "); gets(stock);
+		if (strcmp(stock, "quit") == 0) break;
 		//Return null if not found
 		NODE *node = locate_node(list,stock);
 		// Display stock
 		if (node){
-			printf("Enter amount sto")
-
+			int size = 0;
+				printf("Enter amount of quotes to display: ");
+				scanf("%d", &size);
+				while (size > node->stack_size) {
+					if (size > node->stack_size) {
+						printf("Please enter smaller amount (max is %d): ", node->stack_size);
+						scanf("%d", &size);
+					}
+				}
+				printf("Stock %s : ", node->name);
+				STACK_NODE *tmp = node->stack;
+				for(int i = 0; i < size; i++) {
+					printf("$%-5.2f   ", tmp->quotes);
+					tmp = tmp->next;
+				}
+				printf("\n");
 		}
 		else{		
 			printf("%s - not found ",stock);
 		}
-	} while (printf("\nWould you like to print again? (Y)"), gets(condition),
+		FLUSH;
+	} while (printf("\nWould you like to search again? (Y)"), gets(condition),
 		((toupper(condition[0]) == 'Y') && strlen(condition) == 1));
+}
+void  display(NODE *list, Direction direction) {
+	NODE *tmp = NULL;
+	switch (direction){
+		case Ascending:{
+			printf("\nAscending order\n");
+			tmp = list->next;
+			while (strcmp(tmp->name, SENTINEL_NODE)) {
+				printf("%-5s : %-7.3f\n", tmp->name, tmp->stack->quotes);
+				tmp = tmp->next;
+				}
+			}
+			break;
+		case Descending:{
+				printf("\nDescending order\n");
+				tmp = list->prev;
+				while (strcmp(tmp->name, SENTINEL_NODE)) {
+					printf("%-5s : %-7.2f\n", tmp->name, tmp->stack->quotes);
+					tmp = tmp->prev;
+				}
+			}
+			break;
+	}
 }
 char *get_input(char *message){
 	char *fname = (char*)malloc(MAX_LEN);
@@ -273,7 +300,6 @@ STACK_NODE *pop(STACK_NODE **stack){
 	return NULL;
 
 }
-
 //------------LINKED-LIST OPERATIONS -----------//
 /************************************************
 Gets a free node from the free stacl (if not
@@ -356,4 +382,20 @@ int  delete(NODE *list, NODE **stack){
 	// NOT IMPLEMENTED YET
 	return 0;
 
+}
+void  destroy_list(NODE *list) {
+	NODE *pWalk;
+	NODE *pNext;
+
+	// REMEMBER destroy stack
+	pWalk = list->next;
+	while (pWalk != list) {
+		// Save a pointer to the next node.
+		pNext = pWalk->next;
+		// Delete the current node.
+		free(pWalk);
+		// Position nodePtr at the next node.
+		pWalk = pNext;
+	}
+	free(list);
 }
