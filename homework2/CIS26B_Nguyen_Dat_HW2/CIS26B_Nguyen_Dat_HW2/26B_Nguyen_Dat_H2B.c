@@ -78,13 +78,15 @@ int main(void){
 //========================== MAIN FUNCTIONS =============================//
 	NODE* stack = NULL; // keep track of deleted nodes - for practice
 	HEAD  head;
+
 	char  *input = get_input(INPUT_PROMPT);
 	head.list = read_file(input, &head.size, &stack);
 
 	display(head.list, Ascending);	// Display in Ascending Order
 	display(head.list, Descending); // Display in Desceding Order
-	print_manager(head.list);		//Print sub-list
-	search_manager(head.list);		//Search manager
+	print_manager(head.list);		// Print sub-list
+	search_manager(head.list);		// Search manager
+
 	// Free memory
 //	destroy_list(head.list);
 
@@ -220,7 +222,9 @@ void search_manager(NODE *list){
 		printf("\n\n");
 		// Get user input
 		printf("Enter stock name (or quit): "); gets(stock);
-		if (strcmp(stock, "quit") == 0) break;
+		if (strcmp(stock, "quit") == 0)
+			break;
+
 		//Return null if not found
 		NODE *node = locate_node(list,stock);
 		// Display stock
@@ -228,19 +232,18 @@ void search_manager(NODE *list){
 			int size = 0;
 				printf("Enter amount of quotes to display: ");
 				scanf("%d", &size);
-				while (size > node->stack_size) {
-					if (size > node->stack_size) {
-						printf("Please enter smaller amount (max is %d): ", node->stack_size);
-						scanf("%d", &size);
-					}
+				// Validate size if not exceeding stack size
+				if (size > node->stack_size) {
+					printf("Please enter smaller amount (max is %d): ", node->stack_size);
+					scanf("%d", &size);
 				}
 				printf("Stock %s : ", node->name);
 				STACK_NODE *tmp = node->stack;
+				//Traverse through the stack to print
 				for(int i = 0; i < size; i++) {
 					printf("$%-5.2f   ", tmp->quotes);
 					tmp = tmp->next;
 				}
-				printf("\n");
 		}
 		else{		
 			printf("%s - not found ",stock);

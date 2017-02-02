@@ -20,6 +20,8 @@ CTestTestfile.cmake
 *.vcxproj.filters
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
+*.sln
+
 
 # Build results
 [Dd]ebug/
@@ -282,4 +284,5 @@ __pycache__/
 
 # Cake - Uncomment if you are using it
 # tools/**
-# !tools/packages.config
+# !tools/packages.config.sln
+*.sln
