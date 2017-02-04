@@ -1,6 +1,5 @@
 /*
 Pointers, Stacks & Queues
-
 There are a number of errors (about 10) in the following program.
 Locate all errors, fix them (as shown below), run the program, and save its output.
 
@@ -27,7 +26,7 @@ IDE:
 #include <crtdbg.h>  // needed to check for memory leaks (Windows only!)
 #endif
 
-#define NUM_STU 3
+#define NUM_STU 6
 
 typedef struct
 {
@@ -40,7 +39,7 @@ typedef struct node NODE;
 struct node
 {
 	STUDENT     data;
-//***Error*****: struct node next <-- should be a pointer
+//   struct node next; // <== Error 1 :  should be a pointer
 	NODE 	    *next;
 };
 
@@ -55,43 +54,44 @@ int main(void)
 
 	STUDENT  stuList[NUM_STU] =
 	{
-		{ "Taylor, Noah", { 85, 94 }, 92 },
-		{ "Smith, Olivia", { 91, 89 }, 86 },
-		{ "Brown, Liam", { 87, 88 }, 90 }
-		//{ "Davis, Emma", { 96, 88 }, 97 },
-		//{ "Garcia, Mason", { 79, 93 }, 92 },
-		//{ "Lopez, Sophia", { 83, 78 }, 95 }
+		{ "Taylor, Noah",{ 85, 94 }, 92 },
+		{ "Smith, Olivia",{ 91, 89 }, 86 },
+		{ "Brown, Liam",{ 87, 88 }, 90 },
+		{ "Davis, Emma",{ 96, 88 }, 97 },
+		{ "Garcia, Mason",{ 79, 93 }, 92 },
+		{ "Lopez, Sophia",{ 83, 78 }, 95 }
 	};
-//***Error*****: unitialized pointer
-	NODE *stack = NULL, *top   = NULL;
-//***Error*****: front should be a pointer
-	NODE *queue = NULL, *rear = NULL, *front = NULL;
 
-//***Error**** should be = NUM_STU
-	int count = NUM_STU;
+//  NODE *stack, *stop;  //  <== Error 2: unitialized pointers.
+	NODE *stack = NULL;
+	NODE *top = NULL;
+	NODE *queue = NULL, *rear = NULL;
+
+//  NODE front;   // <== Error 3 :  should be a pointer
+	NODE *front = NULL;
+	int i, n, count = 4;
 
 	// build stack and queue with data from an array of STUDENT structures
 	srand((unsigned int)time(NULL));
-	// Why do we need to push/enqueue randomly? It coul possibly replicate a same number twice
-	int i = rand() % NUM_STU;
 
 	for (int n = 0; n < count; n++){
-//***Error*****:  stuList[i] should by passed by reference
-		stack = push(stack, &stuList[n]);   
-		enqueue(&queue, &rear, &stuList[n]);
+//		i = rand() % NUM_STU;               <== Error 4: Logic error
+		i = (rand() % NUM_STU) - 1;
+		stack = push(stack, &stuList[n]);  
+//      enqueue(&queue, &rear, stuList[i]);  <== Error  5:  stuList[i] should by passed by reference
+		enqueue(&queue, &rear, &stuList[i]);
 	}
 
 	// display stack
 	printf("STACK contents from top to bottom:\n");
 
-//***Error**** : no need to allocate memory in heap for top
-	//top = (NODE *)malloc(sizeof(NODE));
+	//top = (NODE *)malloc(sizeof(NODE));        <== Error 6 : no need to allocate memory in heap for top
 	//if (!top) printf("... error!\n"), exit(1);
 
-//**Error** : should pass address of stack
+//  while ((top = pop(stack)))  <== Error 7 : should pass address of stack
 	while ((top = pop(&stack))) {
 		printStu(&top->data);
-//**Error** : memory leak
+		//                      <== Error 8 : memory leak
 		free(top);
 	}
 	printf("\n\n");
@@ -99,17 +99,17 @@ int main(void)
 	// display queue
 	printf("QUEUE contents from front to rear:\n");
 
-//**Error** : queue and rear should be passed by reference
-	while ((front = dequeue(&queue, &rear))){ // front != NULL
+//    while ((front = dequeue(queue, rear)))       <==== Error 9 : should be passed by reference
+	while ((front = dequeue(&queue, &rear))){
 		printStu(&front->data);
-//**Error** : memory leak
-		free(front); 
+		//                      <== Error 10 : memory leak
+		free(front);
 	}
 	printf("\n\n");
 #ifdef _MSC_VER
 	printf(_CrtDumpMemoryLeaks() ? "Memory Leak\n" : "No Memory Leak\n");
 #endif
-
+	system("pause");
 	return 0;
 }
 /***************************************************

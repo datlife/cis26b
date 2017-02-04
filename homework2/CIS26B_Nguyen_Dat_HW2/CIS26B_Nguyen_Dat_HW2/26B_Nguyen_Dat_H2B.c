@@ -15,7 +15,7 @@ IDE (compiler): Visual Studio 2015
 #include <string.h>
 #include <errno.h>
 
-#define MAX_LEN        5
+#define MAX_LEN        25
 #define INPUT_PROMPT   "Enter your input file (or press Enter for default choice):"
 #define INPUT_DEFAULT  "./stocks.txt"
 #define FLUSH          while(getchar() != '\n')
@@ -28,7 +28,7 @@ IDE (compiler): Visual Studio 2015
 typedef struct list_node  NODE;
 typedef struct stack_node STACK_NODE;
 typedef enum{ Descending, Ascending }Direction;
-enum{ OFF, ON };
+enum{ OFF, ON };	// Notify get_node() to free memory
 
 //==========================OBJECT DEFINITIONS============================//
 typedef struct {
@@ -63,17 +63,12 @@ int main(void){
 	void   search_manager(NODE *list);
 	void   _print(NODE *first, NODE *last, Direction);
 
-//-------------STACK OPERATIONS-----------------//
-	STACK_NODE *push(STACK_NODE *stack, double quote);
-	STACK_NODE *pop(STACK_NODE **stack);
-	void		destroy_stack(STACK_NODE * stack);
-
-//------------LINKED-LIST OPERATIONS -----------//
+//-------------STACK & LINKED LIST OPERATIONS-----------------//
 	NODE *get_node(NODE **stack, int kill_signal);
 	NODE *init_list(NODE **stack);
 	NODE *locate_node(NODE *list, char *name);
+	STACK_NODE *push(STACK_NODE *stack, double quote);
 	int   insert(STOCK data, NODE *list, NODE **stack);
-	int   delete(NODE *list, NODE **stack);
 	void  destroy_list(NODE *list, NODE **stack);
 
 //========================== MAIN FUNCTIONS =============================//
@@ -82,18 +77,19 @@ int main(void){
 
 	char  *input = get_input(INPUT_PROMPT);
 	head.list = read_file(input, &head.size, &stack);
-
 	display(head.list, Ascending);	// Display in Ascending Order
 	display(head.list, Descending); // Display in Desceding Order
 	print_manager(head.list);		// Print sub-list
 	search_manager(head.list);		// Search manager
 
-	// Free memory - I could have used a stack to save first element's address of each memblock
+	// Free memory
 	destroy_list(head.list, stack);
+	free(input);
+
 #ifdef _MSC_VER
 	printf(_CrtDumpMemoryLeaks() ? "\nMemory Leak\n" : "\nNo Memory Leak\n");
 #endif
-	int wait = scanf("Exiting program: ", &wait);
+	system("pause");
 	return 0;
 }
 /*===============================================================
@@ -109,12 +105,19 @@ NODE *read_file(char  *filename, int *list_size, NODE **stack){
 	FILE  *fp = NULL;
 	NODE  *list = NULL;
 	//Open a file
-	if (strcmp(filename, "") == 0)
-		strcpy(filename, INPUT_DEFAULT);  // I assume the maximum buffer is 100
+	if (strcmp(filename, "") == 0) {
+		strcpy(filename, INPUT_DEFAULT);
+		printf("File not found. Using default file %s\n\n", INPUT_DEFAULT);
+
+	}
 	fp = fopen(filename, "r");
 	if (!fp) {
-		printf("File %s not found\n", filename); 
-		exit(101);
+		strcpy(filename, INPUT_DEFAULT);
+		printf("\nFile not found. Using default file %s\n\n", INPUT_DEFAULT);
+		if (!( fp = fopen(filename, "r"))) {
+			printf("File %s not found\n", filename);
+			exit(101);
+		}
 	}
 	int count = 0;  								// store the loop counts = number of lines in file
 	rewind(fp); 									// Make sure we are at first pos
@@ -170,7 +173,7 @@ void   _print(NODE *first, NODE *last, Direction direction){
 			NODE *tmp = first;
 			while (tmp != last){
 				if (strcmp(tmp->name, SENTINEL_NODE) != 0)
-					printf("%-*s ",MAX_LEN,tmp->name); // using '*' flexibility in format description
+					printf("%-6s ",tmp->name);
 				tmp = tmp->next;
 			}
 			printf("%-*s ", MAX_LEN, tmp->name);
@@ -180,7 +183,7 @@ void   _print(NODE *first, NODE *last, Direction direction){
 			NODE *tmp = first;
 			while (tmp != last){
 				if (strcmp(tmp->name, SENTINEL_NODE)!= 0)
-					printf("%-*s ", MAX_LEN, tmp->name);
+					printf("%-6s ", tmp->name);
 				tmp = tmp->prev;
 			}
 			printf("%-*s ", MAX_LEN, tmp->name);
@@ -201,23 +204,22 @@ void   _print(NODE *first, NODE *last, Direction direction){
 *	Post: display sublist to screen
 */
 void   print_manager(NODE *list){
-	char first_stock[MAX_LEN];
-	char second_stock[MAX_LEN];
-	char print_type[MAX_LEN];
-	char condition[MAX_LEN];
+	char first_stock[MAX_LEN] = { 0 };
+	char second_stock[MAX_LEN] = { 0 };
+	char print_type[MAX_LEN] = { 0 };
+	char condition[MAX_LEN] = { 0 };
 	printf("\n\n======================Display Sub-list============================");
 	do{
 		printf("\n\n");
 		// Get user input
 		printf("Enter first stock: ");				gets(first_stock);
 		printf("Enter second stock: ");				gets(second_stock);
-		printf("\n%s to %s: \n", first_stock, second_stock);
 		//Return null if not found
 		NODE *start_node = locate_node(list, first_stock);
 		NODE *end_node = locate_node(list, second_stock);
-
 		// Display sublist
 		if (start_node && end_node){
+			printf("\n%s to %s: \n", first_stock, second_stock);
 			// Display in four ways
 			_print(start_node, end_node, Descending);
 			_print(end_node, start_node, Ascending);
@@ -267,6 +269,7 @@ void search_manager(NODE *list){
 					printf("$%-5.2f   ", tmp->quotes);
 					tmp = tmp->next;
 				}
+				FLUSH;
 			}
 			else
 				printf("\nPlease only enter number\n");	
@@ -274,7 +277,6 @@ void search_manager(NODE *list){
 		else{
 			printf("%s - not found\n", stock);
 		}
-		FLUSH;
 	}
 }
 /*===========================================================
@@ -289,7 +291,7 @@ void  display(NODE *list, Direction direction) {
 	NODE *tmp = NULL;
 	switch (direction){
 		case Ascending:{
-			printf("\nAscending order\n");
+			printf("\n-------- Ascending order ----------\n");
 			tmp = list->next;
 			while (strcmp(tmp->name, SENTINEL_NODE)) {
 				printf("%-5s: $%-5.2f\n", tmp->name, tmp->stack->quotes);
@@ -298,12 +300,12 @@ void  display(NODE *list, Direction direction) {
 		}
 		break;
 		case Descending:{
-				printf("\nDescending order\n");
-				tmp = list->prev;
-				while (strcmp(tmp->name, SENTINEL_NODE)) {
-					printf("%-5s : $%-5.2f\n", tmp->name, tmp->stack->quotes);
-					tmp = tmp->prev;
-				}
+			printf("\n-------- Descending order ---------\n");
+			tmp = list->prev;
+			while (strcmp(tmp->name, SENTINEL_NODE)) {
+				printf("%-5s : $%-5.2f\n", tmp->name, tmp->stack->quotes);
+				tmp = tmp->prev;
+			}
 		}
 		break;
 	}
@@ -317,6 +319,10 @@ void  display(NODE *list, Direction direction) {
 */
 char *get_input(char *message){
 	char *fname = (char*)malloc(MAX_LEN);
+	if ( fname == NULL) {
+		printf("Fatal malloc error in get_node!\n");
+		exit(1);
+	}
 	printf(message);
 	fgets(fname, MAX_LEN, stdin);
 	fname[strcspn(fname, "\n")] = 0;
@@ -324,6 +330,14 @@ char *get_input(char *message){
 }
 
 //-------------STACK OPERATIONS-----------------//
+/*===========================================================
+* push()
+* =========================================================
+* Push operation for Stack
+* 	Pre: stack : allocated stack node
+		 data  : data
+*	Post: push to stack
+*/
 STACK_NODE *push(STACK_NODE *stack, double data){
 	STACK_NODE *pnew;
 
@@ -338,11 +352,7 @@ STACK_NODE *push(STACK_NODE *stack, double data){
 
 	return stack;
 }
-STACK_NODE *pop(STACK_NODE **stack){
-	// NOT IMPLEMENTED YET
-	return NULL;
 
-}
 //------------LINKED-LIST OPERATIONS -----------//
 /************************************************
 Gets a free node from the free stacl (if not
@@ -352,8 +362,9 @@ NODE *get_node(NODE **stack,int destroy_signal){
 	#define BLOCKSIZE 5
 	NODE *first = NULL;
 	static NODE *block = NULL, *blockrear;
+	static NODE *memstack[20] = { NULL };
 	static int  i = 0;
-	static NODE *memstack[100] = { NULL };
+
 	// Could be a better solution by using node* array to keep track of Block address.
 	// However, it requires me to pass that array to every insert/delete call.
 	switch (destroy_signal)
@@ -371,47 +382,48 @@ NODE *get_node(NODE **stack,int destroy_signal){
 				else block++;   // move to the next struct
 			}
 			else{  // stack and block are NULL!
-				if ((block = (NODE *)malloc(BLOCKSIZE * sizeof(NODE))) == NULL)
-				{
+				if ((block = (NODE *)malloc(BLOCKSIZE * sizeof(NODE))) == NULL){
 					printf("Fatal malloc error in get_node!\n");
 					exit(1);
 				}
-				memset(block, 0, BLOCKSIZE * sizeof(NODE));
-				memstack[i] = block;
-				i++;
+				memset(block, 0, BLOCKSIZE * sizeof(NODE)); 
+				memstack[i++] = block;
 				blockrear = block + BLOCKSIZE - 1;
 				first = block;
 				block++;
 			}
+			return first;
 		}
 			break;
 		case ON:{
-			for (int i = 0; memstack[i] != NULL; i++){			 // GO to first element in memblock
-				for (int s = 0; s < BLOCKSIZE; s++){			 // Iterate through block
-
-					// If block is created (not 0 due to above memset), 
-					// then free the stack inside its
-					NODE *curr_adr = memstack[i] + s;
-					int a = sizeof(NODE);
-					char test[sizeof(NODE)] = { 0 };
-					if (memcmp(curr_adr, test, sizeof (NODE)) != 0)
-					{	
-						STACK_NODE *s = memstack[i]->stack;
-						STACK_NODE *tmp = NULL;
-						while (s){
-							tmp = s;
-							s = s->next;
+			char test[sizeof(NODE)] = { 0 };
+			for (int i = 0; memstack[i] != NULL; i++){				// GO to first element in each memblock
+				for (int s = 0; s < BLOCKSIZE; s++){				// Iterate through block to free stack of each node (if available) before free memblock
+					NODE *curr_addr = memstack[i] + s;
+					if (memcmp(curr_addr, test, sizeof (NODE)) != 0){ // If block is created (not 0 due to above memset)
+						STACK_NODE *curr_stack = curr_addr->stack;
+						while (curr_stack){
+							STACK_NODE *tmp = curr_stack;
+							curr_stack = curr_stack->next;
 							free(tmp);
 						}
 					}			
-					free(memstack[i] + s);				  // Free block
 				}
+				free(memstack[i]);									// Free memblock
 			}
 		}
 		break;
 	}
-	return first;
+	return NULL;
 }
+/*=========================================================
+* init_list()
+* =========================================================
+* Initialize a Linked-List
+* 	Pre: stack : save list of available nodes to use
+
+*	Post: initialize linked list with a sentinel node
+*/
 NODE *init_list(NODE **stack){
 	NODE *list = NULL;
 	// Allocate sentinal node
@@ -424,13 +436,21 @@ NODE *init_list(NODE **stack){
 	list->stack = NULL;
 	return list;
 }
-
+/*=========================================================
+* insert()
+* =========================================================
+* Insert operation for LINKED List Structure
+* 	Pre: new_stock: data	
+		 list     : linked list to insert
+		 stack    : list of available nodes in heap
+*	Post: insert a new stock to linkedlist OR add new price
+*/
 int  insert(STOCK new_stock, NODE *list, NODE **stack){
+
 	NODE *curr = list->next;
 	NODE *prev = list;
 	NODE *pnew = NULL;
 	int   duplicate = 1;
-
 	// search
 	while (strcmp(new_stock.name, curr->name) > 0){
 		prev = curr;
@@ -456,18 +476,23 @@ int  insert(STOCK new_stock, NODE *list, NODE **stack){
 	}
 	return duplicate;
 }
-int  delete(NODE *list, NODE **stack){
-	// NOT IMPLEMENTED YET
-	return 0;
-}
+
+/*=========================================================
+* destroy()
+* =========================================================
+ Free memory in linkedlist
+*/
 void  destroy_list(NODE *list, NODE **stack) {
 	// Activate kill signal in get node
 	get_node(list, ON);
 }
-/*
-Enter your input file (or press Enter for default choice):
 
-Ascending order
+/*
+Enter your input file (or press Enter for default choice):as
+
+File not found. Using default file ./stocks.txt
+
+-------- Ascending order ----------
 AAPL : $119.73
 AMZN : $810.11
 CSCO : $30.04
@@ -480,7 +505,7 @@ NFLX : $139.39
 ORCL : $32.78
 ZNGA : $2.64
 
-Descending order
+-------- Descending order ---------
 ZNGA  : $2.64
 ORCL  : $32.78
 NFLX  : $139.39
@@ -497,50 +522,54 @@ AAPL  : $119.73
 ======================Display Sub-list============================
 
 Enter first stock: AMZN
-Enter second stock: APPL
-
-AMZN to APPL:
-APPL - Not Found
-
-Would you like to print again? (Y)y
-
-
-Enter first stock: AMZN
 Enter second stock: AAPL
 
 AMZN to AAPL:
-AMZN  CSCO  EBAY  FB    GOOG  INTC  MSFT  NFLX  ORCL  ZNGA  AAPL
-AAPL  ZNGA  ORCL  NFLX  MSFT  INTC  GOOG  FB    EBAY  CSCO  AMZN
-AMZN  AAPL
-AAPL  AMZN
+AMZN   CSCO   EBAY   FB     GOOG   INTC   MSFT   NFLX   ORCL   ZNGA   AAPL
+AAPL   ZNGA   ORCL   NFLX   MSFT   INTC   GOOG   FB     EBAY   CSCO   AMZN
+AMZN   AAPL
+AAPL   AMZN
 
 Would you like to print again? (Y)y
 
 
-Enter first stock: EBAY
-Enter second stock: CSCO
+Enter first stock: AAPL
+Enter second stock: GOOG
 
-EBAY to CSCO:
-EBAY  FB    GOOG  INTC  MSFT  NFLX  ORCL  ZNGA  AAPL  AMZN  CSCO
-CSCO  AMZN  AAPL  ZNGA  ORCL  NFLX  MSFT  INTC  GOOG  FB    EBAY
-EBAY  CSCO
-CSCO  EBAY
+AAPL to GOOG:
+AAPL   AMZN   CSCO   EBAY   FB     GOOG
+GOOG   FB     EBAY   CSCO   AMZN   AAPL
+AAPL   ZNGA   ORCL   NFLX   MSFT   INTC   GOOG
+GOOG   INTC   MSFT   NFLX   ORCL   ZNGA   AAPL
+
+Would you like to print again? (Y)y
+
+
+Enter first stock: as
+Enter second stock: AMZN
+as  - Not Found
 
 Would you like to print again? (Y)n
 
 
 ====================== Search Manager ============================
 
-Enter a stock name (or QUIT/quit): E
-E - not found
+Enter a stock name (or QUIT/quit): QU
+QU - not found
 
+Enter a stock name (or QUIT/quit): FB
+Enter amount of quotes to display: 5
 
+Stock FB : $127.85   $27.43   $27.61   $20.72   $26.85
 
-Enter a stock name (or QUIT/quit): EBAY
-Enter amount of quotes to display: 10
-Please enter smaller amount (max is 4): 4
-Stock EBAY : $30.64   $52.60   $52.29   $52.78
+Enter a stock name (or QUIT/quit): AMZN
+Enter amount of quotes to display: 100
+Please enter smaller amount (max is 2): 2
+
+Stock AMZN : $810.11   $249.74
 
 Enter a stock name (or QUIT/quit): QUIT
 
+No Memory Leak
+Press any key to continue . . .
 */
