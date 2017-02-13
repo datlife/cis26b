@@ -14,7 +14,7 @@
 #define INIT_HASH_SIZE 40
 #define MAX_BUCKETS	   4
 #define INPUT_BUFFER   100
-#define ID_LEN		   4
+#define ID_LEN		   5
 #define PRODUCT_LEN    20
 #define INPUT_PROMPT   "Enter your input file (or press Enter for default choice):"
 #define DEFAULT_FILE   "input.txt"
@@ -38,21 +38,24 @@ int main(void) {
 	unsigned long hashFunc(char *key);
 	HashNode *init_table(char *output_file);
 	int insert(Record r, HashNode *);		// (c) Report/Reject record additions
-	/*int delete(char *id, HashNode *);
-	int search(char *id, HashNode *);*/
+	int delete(char *id, HashNode *);
+	int search(char *id, HashNode *);
 
 	// ================ Function Prototypes =====================
-	int read_text(char *filename, HashNode *);
+	int read_text(char *filename, HashNode *table);
 	int write_bin(char *filename, HashNode *);
 	char  *get_input(char *message);
-	// int error_check(char *input);	// required to use strtok
+	int error_check(char *input);	// required to use strtok
 
 	// ==================== Main Program ========================
 	HashNode *table = init_table("test.dat");
 	char *input = get_input(INPUT_PROMPT);
 	int test = read_text(input, table);
+	//Batch Insertion
+	write_bin("data2.bin", table);
 
 	free(table);
+	free(input);
 #ifdef _MSC_VER
 	printf(_CrtDumpMemoryLeaks() ? "\nMemory Leak\n" : "\nNo Memory Leak\n");
 #endif
@@ -79,24 +82,74 @@ HashNode *init_table(char *output_file){
 		table[i].num_collisions = 0;
 	}
 	//Write empty hash to bin file.
-	write_bin("data.bin", table);
-
+	printf("Saving empty hash table....", output_file); 
+	write_bin(output_file, table);
 	return table;
 }
+int read_text(char *filename, HashNode *table) {
+	FILE  *fp = NULL;
+	//Open a file
+	if (strcmp(filename, "") == 0) {
+		strcpy(filename, DEFAULT_FILE);
+		printf("File not found. Using default file %s\n\n", DEFAULT_FILE);
+	}
+	fp = fopen(filename, "r");
+	if (!fp) {
+		strcpy(filename, DEFAULT_FILE);
+		printf("\nFile not found. Using default file %s\n\n", DEFAULT_FILE);
+		if (!(fp = fopen(filename, "r"))) {
+			printf("File %s not found\n", filename);
+			exit(101);
+		}
+	}
+	int count = 0;  								// store the loop counts = number of lines in file
+	rewind(fp); 									// Make sure we are at first pos
+	// TODO: better buffer
+	char *id_buffer[ID_LEN];
+	char* product_buffer[PRODUCT_LEN];
+	int  tmp_qty;
+	while (fscanf(fp, " %4s, %[a-zA-Z0-9() ]:%d", id_buffer, product_buffer, &tmp_qty) != EOF) {
+		Record tmp;
+		strcpy(tmp.id, id_buffer);
+		strcpy(tmp.name, product_buffer);
+		tmp.qty = tmp_qty;
+		int success = insert(tmp, table);
+		if (success != 0)
+			printf("\nError when inserting a Record to hash table.\n");		
+	}
+	return 0;
+}
 int write_bin(char *output_file, HashNode *table) {
-
 	//Write file to bin
 	FILE *fp;
 	fp = fopen(output_file, "r");
 	if (!fp) { // File is not created yet
 		fp = fopen(output_file, "wb");
 		fwrite(&table[0], sizeof(HashNode)*INIT_HASH_SIZE, 1, fp);
+		printf("Saved\n\n");
 	}
 	else {     // File is existed
-		printf("Error: filename is existed. Would you like to overwritten the existing file?");
-		fp = fopen(output_file, "wb");
-		fwrite(&table[0], sizeof(HashNode)*INIT_HASH_SIZE, 1, fp);
+		char choice;
+		while (1) {
+			printf("\n\nError: %s is existed. Would you like to overwrite? (y/n)", output_file);
+			scanf("%c", &choice);
+			if (toupper(choice) == 'Y') {
+				fp = fopen(output_file, "wb");
+				fwrite(&table[0], sizeof(HashNode)*INIT_HASH_SIZE, 1, fp);
+				printf("\nFile %s is overwritten.\n", output_file); FLUSH;
+				break;
+			}
+			else if (toupper(choice) == 'N'){
+				printf("\nFile %s is not overwritten.\n", output_file); FLUSH;
+				break;
+			} 
+			else {
+				printf("\nInvalid choice. Please type again");
+			}
+		}
 	}
+	return 0;
+
 }
 /****** HASH FUNCT *************
 The hash key is product id
@@ -115,7 +168,7 @@ int insert(Record r, HashNode *table) {
 	int i = 0;
 
 	// Move to correct bucket while comparing if ID is duplicated
-	while (i <= table[key].num_collisions) {
+	while (i < table[key].num_collisions) {
 		if (strcmp(r.id, table[key].buckets[i].id) == 0) {
 			printf("\nDuplicate ID is not allowed.\n");
 			return -1;
@@ -126,44 +179,47 @@ int insert(Record r, HashNode *table) {
 		printf("\nBucket is full. This Hash Table does not support overflow. \n");
 		return -1;
 	}
+	//Complete error check before adding new record
+	if (error_check(&r) != 0){
+		printf("\nFailed to add     %s, %-14s :%-3d into HashTable **FORMAT ERROR**", table[key].buckets[i].id, table[key].buckets[i].name, table[key].buckets[i].qty);
+		return -1;
+	}
 	// Start insert
 	strcpy(table[key].buckets[i].id, r.id);
 	strcpy(table[key].buckets[i].name, r.name);
 	table[key].buckets[i].qty = r.qty;
+	printf("\nSuccesfully Added %s, %-14s :%-3d into HashTable at key %d\n", table[key].buckets[i].id, table[key].buckets[i].name, table[key].buckets[i].qty, key);
 	return 0;
 
 }
 
 
-//int delete(char *id, HashNode *table) {
-//
-//}
-//int search(char *id, HashNode *table) {
-//
-//}
+int delete(char *id, HashNode *table) {
+	return 0;
+}
+int search(char *id, HashNode *table) {
+	return 0;
+}
 
-//int id_matched(char *id) {
-//	return 0;
-//
-//}
-//int name_matched(char *name) {
-//	return 0;
-//
-//}
-//int qty_matched(int qty) {
-//	return 0;
-//}
-//int error_check(char *input) {
-//	//enum {MATCHED}; // MATCHED = 0
-//	//// Assume parse data successfully
-//
-//	//Record *file = NULL;
-//
-//	//if (id_matched(file->id) != MATCHED)     return -1;
-//	//if (name_matched(file->name) != MATCHED) return -1;
-//	//if (qty_matched(file->qty) != MATCHED)	 return -1;
-//	//return 1;
-//}
+int id_matched(char *id) {
+	return 0;
+
+}
+int name_matched(char *name) {
+	return 0;
+
+}
+int qty_matched(int qty) {
+	return 0;
+}
+int error_check(Record *file) {
+	enum {MATCHED}; // MATCHED = 0
+	// Assume parse data successfully
+	if (id_matched(file->id) != MATCHED)     return -1;
+	if (name_matched(file->name) != MATCHED) return -1;
+	if (qty_matched(file->qty) != MATCHED)	 return -1;
+	return 0;
+}
 /*===========================================================
 * get_input
 * =========================================================
@@ -181,42 +237,4 @@ char *get_input(char *message) {
 	fgets(fname, INPUT_BUFFER, stdin);
 	fname[strcspn(fname, "\n")] = 0;
 	return fname;
-}
-int read_text(char *filename, HashNode *table) {
-	FILE  *fp = NULL;
-	//Open a file
-	if (strcmp(filename, "") == 0) {
-		strcpy(filename, DEFAULT_FILE);
-		printf("File not found. Using default file %s\n\n", DEFAULT_FILE);
-
-	}
-	fp = fopen(filename, "r");
-	if (!fp) {
-		strcpy(filename, DEFAULT_FILE);
-		printf("\nFile not found. Using default file %s\n\n", DEFAULT_FILE);
-		if (!(fp = fopen(filename, "r"))) {
-			printf("File %s not found\n", filename);
-			//exit(101);
-		}
-	}
-	int count = 0;  								// store the loop counts = number of lines in file
-	rewind(fp); 									// Make sure we are at first pos
-
-													// TODO: better buffer
-	char *id_buffer = malloc(4 * sizeof(char));
-	char* product_buffer = malloc(200 * sizeof(char));
-	int  tmp_qty;
-	while (fscanf(fp, " %4s, %[a-zA-Z0-9() ]:%d", id_buffer, product_buffer, &tmp_qty) != EOF) {
-		Record tmp;
-		strcpy(tmp.id, id_buffer);
-		strtcpy(tmp.name, product_buffer);
-		tmp.qty = tmp_qty;
-		int success = insert(tmp, table);
-		if (success != 0)
-			printf("\nError when inserting a Record to hash table.\n");
-	}
-
-	free(id_buffer);
-	free(product_buffer);
-	return 0;
 }
