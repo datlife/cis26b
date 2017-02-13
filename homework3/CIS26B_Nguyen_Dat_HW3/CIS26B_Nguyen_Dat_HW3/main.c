@@ -114,8 +114,15 @@ int read_text(char *filename, HashNode *table) {
 		strcpy(tmp.name, product_buffer);
 		tmp.qty = tmp_qty;
 		int success = insert(tmp, table);
-		if (success != 0)
-			printf("\nError when inserting a Record to hash table.\n");		
+		if (success != 0){
+			if (success == -2)
+				printf("....ID is invalid.\n");
+			if (success == -2)
+				printf("....Product name is invalid.\n");
+			if (success == -3)
+				printf("....Quanity is invalid.\n");
+
+		}
 	}
 	return 0;
 }
@@ -180,15 +187,17 @@ int insert(Record r, HashNode *table) {
 		return -1;
 	}
 	//Complete error check before adding new record
-	if (error_check(&r) != 0){
-		printf("\nFailed to add     %s, %-14s :%-3d into HashTable **FORMAT ERROR**", table[key].buckets[i].id, table[key].buckets[i].name, table[key].buckets[i].qty);
-		return -1;
+	int checkpoint = error_check(&r);
+	if (checkpoint != 0){
+		printf("\nFailed to add     %s, %-14s :%-3d into HashTable **FORMAT ERROR**", r.id, r.name, r.qty);
+		return checkpoint;
 	}
 	// Start insert
 	strcpy(table[key].buckets[i].id, r.id);
 	strcpy(table[key].buckets[i].name, r.name);
 	table[key].buckets[i].qty = r.qty;
 	printf("\nSuccesfully Added %s, %-14s :%-3d into HashTable at key %d\n", table[key].buckets[i].id, table[key].buckets[i].name, table[key].buckets[i].qty, key);
+	table[key].num_collisions++;
 	return 0;
 
 }
@@ -210,14 +219,17 @@ int name_matched(char *name) {
 
 }
 int qty_matched(int qty) {
-	return 0;
+	if(qty > 2000 || qty < 0) 
+		return -1;
+	else
+		return 0;
 }
 int error_check(Record *file) {
 	enum {MATCHED}; // MATCHED = 0
 	// Assume parse data successfully
 	if (id_matched(file->id) != MATCHED)     return -1;
-	if (name_matched(file->name) != MATCHED) return -1;
-	if (qty_matched(file->qty) != MATCHED)	 return -1;
+	if (name_matched(file->name) != MATCHED) return -2;
+	if (qty_matched(file->qty) != MATCHED)	 return -3;
 	return 0;
 }
 /*===========================================================
