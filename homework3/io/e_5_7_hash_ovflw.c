@@ -103,13 +103,9 @@ void search_or_insert(FILE *fp, int insertflag)
         if (!token) continue;
         address = hash(line, 100);
         if (insertflag)
-        {
             insert_record(token, address, fp);
-        }
         else
-        {
             search_record(token, address, fp);
-        }
     }
     return;
 }
@@ -121,7 +117,6 @@ void insert_record(char *key, long address, FILE *fp)
 {
     RECORD detect, temp;
     int i;
-
     strcpy(temp.key, key);
     temp.num = rand()%99 + 5000;
     // go to beginning of hash bucket
@@ -160,6 +155,7 @@ void insert_record(char *key, long address, FILE *fp)
     printf("Hash table overflow! Abort!\n");
     exit(5);
 }
+
 
 /******************************************************
    Hashing to Disk: Search
