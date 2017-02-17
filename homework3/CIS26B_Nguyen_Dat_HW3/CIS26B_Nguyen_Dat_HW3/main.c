@@ -34,6 +34,7 @@ typedef struct{
 }HashNode;
 
 typedef enum{INSERT, SEARCH, DELETE}Menu;
+
 int main() {
 	// ================== Hash Operations =======================
 	unsigned long hashFunc(char *id);
@@ -56,8 +57,9 @@ int main() {
 	char *arg = get_input(INPUT_PROMPT); // should be an argument
 	// Insert records into binary file using text file input
 	read_text(arg, fp);
-
+	// Mannually insert or batch insertion
 	demo(fp, INSERT);
+	// Search demo
 	demo(fp, SEARCH);
 
 
@@ -220,16 +222,25 @@ int   delete(Record r, FILE *fp){
 	//Start search
 	unsigned long key = hashFunc(r.id);
 
-	//Copy HashNode 
+	//Copy HashNode into Memory
 	HashNode curr_node;
 	fseek(fp, sizeof(HashNode)*(key - 1), SEEK_SET); 	//Seek to current correct hash node
+	fread(&curr_node, sizeof(HashNode), 1, fp);
 
-	int i = 0; // Move to correct bucket while comparing if ID is duplicated
+	// Move to correct bucket while comparing if ID is duplicated
+	int pos = -1;
+	int i = 0;
 	while (i < curr_node.num_collisions){
 		if (strcmp(r.id, curr_node.buckets[i].id) == 0){
+			pos = i;
 			break;
 		}
 		i++;
+	}
+	if (pos != -1){
+		Record empty = { "" };
+		fseek(fp, sizeof(HashNode)*(key - 1), SEEK_SET); 	//Seek to current correct hash node
+		fwrite(&empty, sizeof(Record)*(pos - 1), 1, fp);
 	}
 }
 void   demo(FILE *fp, Menu option){
@@ -249,9 +260,7 @@ void   demo(FILE *fp, Menu option){
 		else{
 			strcpy(temp.id, strtok(input, " ,")); 
 			strcpy(temp.name, strtok(NULL, ":"));
-
 			//Token leading spaces in temp.name
-
 			temp.qty = strtol(strtok(NULL, "\t\n "), NULL, 10);
 			switch (option){
 				case INSERT:
