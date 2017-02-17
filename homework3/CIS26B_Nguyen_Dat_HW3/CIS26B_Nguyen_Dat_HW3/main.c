@@ -35,7 +35,7 @@ typedef struct{
 
 typedef enum{INSERT, SEARCH, DELETE}Menu;
 
-int main() {
+int main(int argc, char *argv[]) {
 	// ================== Hash Operations =======================
 	unsigned long hashFunc(char *id);
 	int   insert(Record r, FILE *);		// (c) Report/Reject record additions
@@ -45,6 +45,7 @@ int main() {
 	FILE *init_table(char *output_file); // should be an argument
 
 	// ================ Function Prototypes =====================
+	void   menu_driver(FILE *fp);
 	int    read_text(char *filename, FILE *);
 	int    error_check(const Record *input);	// required to use strtok
 	void   demo(FILE *fp, Menu option);
@@ -53,19 +54,9 @@ int main() {
 	// ==================== Main Program ========================
 	// Initialize empty hash table into a binary file.
 	FILE *fp = init_table("empty_hash.dat");
-
-	char *arg = get_input(INPUT_PROMPT); // should be an argument
 	// Insert records into binary file using text file input
-	read_text(arg, fp);
-	// Mannually insert or batch insertion
-	demo(fp, INSERT);
-	// Search demo
-	demo(fp, SEARCH);
-
-
-
-	free(arg);
-
+	read_text(argv[1], fp);
+	menu_driver(fp);
 
 #ifdef _MSC_VER
 	printf(_CrtDumpMemoryLeaks() ? "\nMemory Leak\n" : "\nNo Memory Leak\n");
@@ -114,13 +105,10 @@ FILE *init_table(char *output_file){
 	}
 	return fp;
 }
+
 int read_text(char *filename, FILE *table) {
 	FILE  *fp = NULL;
 	//Open a file
-	if (strcmp(filename, "") == 0) {
-		strcpy(filename, DEFAULT_FILE);
-		printf("File not found. Using default file %s\n\n", DEFAULT_FILE);
-	}
 	fp = fopen(filename, "r");
 	if (!fp) {
 		strcpy(filename, DEFAULT_FILE);
@@ -157,20 +145,116 @@ unsigned long hashFunc(char *key) {
 	return sum % INIT_HASH_SIZE;
 }
 
+void   menu_driver(FILE *fp) {
+	char buffer[INPUT_BUFFER];
+	char QUIT_SIGNAL = 0;
+	do {
+		printf("\n ============== MAIN MENU ======================\n");
+		printf("\n 1. Insert a single product.\n");
+		printf("\n 2. Batch insertion.\n");
+		printf("\n 3. Look up a product.\n");
+		printf("\n 4. Delete a product.\n");
+		printf("\n 5. Quit\n");
+		printf("\n ===============================================\n");
+		printf("\n Select an option: ");
+		fgets(buffer, INPUT_BUFFER, stdin);
+		if (isdigit(buffer[0])) {
+			int num = buffer[0] - 48;
+			printf("");
+			switch (num) {
+			case 1:
+				printf("\n====== INSERT  ========\n");
+				demo(fp, INSERT);
+				break;
+			case 2:
+				printf("\n===== BATCH INSERT ======\n");
+				char *input = get_input("Enter a text file: ");
+				free(input);
+				break;
+			case 3:
+				printf("\n===== SEARCH  ==========\n");
+				demo(fp, SEARCH);
+				break;
+			case 4:
+				printf("\n=====  DELETE  =========\n");
+				demo(fp, DELETE);
+				break;
+			case 5:
+				QUIT_SIGNAL = 1;
+				break;
+			default:
+				printf("\nOut of range option\n");
+				break;
+			}
+		}
+		else 
+			printf("\n***Invalid input. Please try again.***\n");
+	} while (QUIT_SIGNAL == 0);
+
+
+}
+
+void   demo(FILE *fp, Menu option) {
+	Record temp;
+	// Batch Insertion and Line Insertion
+	char input[INPUT_BUFFER];
+	while (1) {
+		printf("\nPlease enter a record('q' to quit): ");
+		fgets(input, INPUT_BUFFER, stdin);
+		if (strcmp(input, "q") == 0) break;
+		if ((strpbrk(input, ",")) == NULL || (strpbrk(input, ":") == NULL) || strcspn(input, ",") > strcspn(input, ":")) {
+			printf("\n\n**Format error** Enter as following format: ID, Name: Quanity\n"); FLUSH;
+			continue;
+		}
+		else {
+			strcpy(temp.id, strtok(input, " ,"));
+			strcpy(temp.name, strtok(NULL, ":"));
+			temp.qty = strtol(strtok(NULL, "\t\n "), NULL, 10);
+			switch (option) {
+			case INSERT:
+				insert(temp, fp);
+				break;
+			case SEARCH:
+				search(temp, fp);
+				break;
+			case DELETE:
+				delete(temp, fp);
+				break;
+			}
+		}
+	}
+}
+int error_check(const Record *f) {
+	if (strspn(f->id, CHECK_ID) != ID_LEN - 1) {
+		printf("\n**Invalid ID**");
+		return -1;
+	}
+	if (strspn(f->name, CHECK_NAME) > NAME_LEN ||
+		strspn(f->name, CHECK_NAME) == 0) {
+		printf("\n**Invalid Product Name**");
+		return -2;
+	}
+	if (f->qty > 2000 || f->qty < 0) {
+		printf("\n**Invalid Quanity**");
+		return -3;
+	}
+	return 0;
+}
+
 int insert(Record r, FILE *fp) {
 	//Complete error check before adding new record
-	if (error_check(&r) != 0){
+	if (error_check(&r) != 0) {
 		printf("\n**Failed to add %s, %-14s :%-4d\n", r.id, r.name, r.qty);
 		return -1;
 	}
 	HashNode curr_node;
 	unsigned long key = hashFunc(r.id);
 	fseek(fp, sizeof(HashNode)*(key - 1), SEEK_SET); 	//Seek to current correct hash node
-	fread(&curr_node, sizeof(HashNode), 1, fp); 
+	fread(&curr_node, sizeof(HashNode), 1, fp);
 
 	int i = 0; // Move to correct bucket while comparing if ID is duplicated
-	while (i < curr_node.num_collisions){
-		if (strcmp(r.id, curr_node.buckets[i].id) == 0){
+	while (i < curr_node.num_collisions) {
+		if (strcmp(r.id, curr_node.buckets[i].id) == 0) {
 			printf("\nDuplicated ID. \n");
 			return -2;
 		}
@@ -185,7 +269,7 @@ int insert(Record r, FILE *fp) {
 	strcpy(curr_node.buckets[i].name, r.name);
 	curr_node.buckets[i].qty = r.qty;
 	curr_node.num_collisions += 1;
-	
+
 	//Move to correct HashNode
 	int move = -1;
 	fseek(fp, sizeof(HashNode)*move, SEEK_CUR);
@@ -194,7 +278,7 @@ int insert(Record r, FILE *fp) {
 	return 0;
 }
 
-int   search(Record r, FILE *fp){
+int   search(Record r, FILE *fp) {
 	//Complete error check before starting a search
 	if (error_check(&r) != 0) return -1;
 
@@ -205,8 +289,8 @@ int   search(Record r, FILE *fp){
 	fseek(fp, sizeof(HashNode)*(key - 1), SEEK_SET); 	//Seek to current correct hash node
 	fread(&curr_node, sizeof(HashNode), 1, fp);
 	int i = 0; // Move to correct bucket while comparing if ID is duplicated
-	while (i < curr_node.num_collisions){
-		if (strcmp(r.id, curr_node.buckets[i].id) == 0){
+	while (i < curr_node.num_collisions) {
+		if (strcmp(r.id, curr_node.buckets[i].id) == 0) {
 			printf("\nRecord is found at bucket %d.\n", key);
 			return i;
 		}
@@ -215,84 +299,32 @@ int   search(Record r, FILE *fp){
 	printf("\nRecord is not found in database.\n");
 	return -1;
 }
-int   delete(Record r, FILE *fp){
+int    delete(Record r, FILE *fp) {
 	//Complete error check before starting a search
 	if (error_check(&r) != 0) return -1;
-
 	//Start search
 	unsigned long key = hashFunc(r.id);
-
 	//Copy HashNode into Memory
 	HashNode curr_node;
 	fseek(fp, sizeof(HashNode)*(key - 1), SEEK_SET); 	//Seek to current correct hash node
 	fread(&curr_node, sizeof(HashNode), 1, fp);
-
 	// Move to correct bucket while comparing if ID is duplicated
 	int pos = -1;
 	int i = 0;
-	while (i < curr_node.num_collisions){
-		if (strcmp(r.id, curr_node.buckets[i].id) == 0){
+	while (i < curr_node.num_collisions) {
+		if (strcmp(r.id, curr_node.buckets[i].id) == 0) {
 			pos = i;
 			break;
 		}
 		i++;
 	}
-	if (pos != -1){
+	if (pos != -1) {
 		Record empty = { "" };
 		fseek(fp, sizeof(HashNode)*(key - 1), SEEK_SET); 	//Seek to current correct hash node
 		fwrite(&empty, sizeof(Record)*(pos - 1), 1, fp);
 	}
 }
-void   demo(FILE *fp, Menu option){
-	Record temp;
-	printf("\n==================== DEMO =========================\n");
-	// Batch Insertion and Line Insertion
-	char input[INPUT_BUFFER];
-	while (1) {
-		printf("\n\nPlease enter a record('q' to quit): ");
-		gets(input);
-		if (strcmp(input, "q") == 0) break;
-		if ((strpbrk(input, ",")) == NULL || (strpbrk(input, ":") == NULL) || strcspn(input, ",") > strcspn(input, ":")){
-			printf("\n\n**Format error** Enter as following format: ID, Name: Quanity");
-			FLUSH;
-			continue;
-		}
-		else{
-			strcpy(temp.id, strtok(input, " ,")); 
-			strcpy(temp.name, strtok(NULL, ":"));
-			//Token leading spaces in temp.name
-			temp.qty = strtol(strtok(NULL, "\t\n "), NULL, 10);
-			switch (option){
-				case INSERT:
-					insert(temp, fp);
-					break;
-				case SEARCH:
-					search(temp, fp);
-					break;
-				case DELETE:
-					delete(temp, fp);
-					break;
-			}
-		}	
-	}
-}
 
-int error_check(const Record *f) {
-	if (strspn(f->id, CHECK_ID) != ID_LEN - 1){
-		printf("\n**Invalid ID**");
-		return -1;
-	}
-	if (strspn(f->name, CHECK_NAME) > NAME_LEN || 
-		strspn(f->name, CHECK_NAME) == 0){
-		printf("\n**Invalid Product Name**");
-		return -2;
-	}
-	if (f->qty > 2000 || f->qty < 0){
-		printf("\n**Invalid Quanity**");
-		return -3;
-	}
-	return 0;
-}
 /*===========================================================
 * get_input
 * =========================================================
