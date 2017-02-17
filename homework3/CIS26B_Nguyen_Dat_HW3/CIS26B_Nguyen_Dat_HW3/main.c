@@ -33,7 +33,7 @@ typedef struct{
 	int    num_collisions;
 }HashNode;
 
-typedef enum{INSERT, SEARCH, DELETE}Menu;
+typedef enum{ INSERT, SEARCH, DELETE }Menu;
 
 int main(int argc, char *argv[]) {
 	// ================== Hash Operations =======================
@@ -68,14 +68,14 @@ int main(int argc, char *argv[]) {
 /*
 init_table()
 
-- Dynamically Allocate Array of HashNode 
+- Dynamically Allocate Array of HashNode
 - Initialize initial values.
 - write an empty hash file to bin
 */
 FILE *init_table(char *output_file){
 	HashNode table[INIT_HASH_SIZE] = { "" };
 	//Write empty hash to bin file.
-	printf("Saving empty hash table....", output_file); 
+	printf("Saving empty hash table....", output_file);
 	//Write file to bin
 	FILE *fp;
 	fp = fopen(output_file, "r");
@@ -122,11 +122,11 @@ int read_text(char *filename, FILE *table) {
 	rewind(fp); 									// Make sure we are at first pos
 
 	// TODO: better buffer
-	char *id_buffer[ID_LEN], * product_buffer[NAME_LEN];
+	char *id_buffer[ID_LEN], *product_buffer[NAME_LEN];
 	int  tmp_qty;
-	while (fscanf(fp, " %4s, %[a-zA-Z0-9() ]:%d", id_buffer, product_buffer, &tmp_qty) != EOF) {
-		Record tmp; 
-		strcpy(tmp.id, id_buffer); strcpy(tmp.name, product_buffer);tmp.qty = tmp_qty;
+	while (fscanf(fp, " %4s ,  %[a-zA-Z0-9() ] : %d", id_buffer, product_buffer, &tmp_qty) != EOF) {
+		Record tmp;
+		strcpy(tmp.id, id_buffer); strcpy(tmp.name, product_buffer); tmp.qty = tmp_qty;
 		int success = insert(tmp, table);
 		// No need to check success here - This feature is used during insertion
 	}
@@ -135,7 +135,7 @@ int read_text(char *filename, FILE *table) {
 
 /****** HASH FUNCT *************
 The hash key is product id
-sum the cube of the ASCII values of the characters 
+sum the cube of the ASCII values of the characters
 making up the product id before dividing by 40
 */
 unsigned long hashFunc(char *key) {
@@ -187,7 +187,7 @@ void   menu_driver(FILE *fp) {
 				break;
 			}
 		}
-		else 
+		else
 			printf("\n***Invalid input. Please try again.***\n");
 	} while (QUIT_SIGNAL == 0);
 
@@ -201,10 +201,11 @@ void   demo(FILE *fp, Menu option) {
 	while (1) {
 		printf("\nPlease enter a record('q' to quit): ");
 		fgets(input, INPUT_BUFFER, stdin);
+		input[strcspn(input, "\n")] = 0;	// remove new line
 		if (strcmp(input, "q") == 0) break;
 		if ((strpbrk(input, ",")) == NULL || (strpbrk(input, ":") == NULL) || strcspn(input, ",") > strcspn(input, ":")) {
 			printf("\n\n**Format error** Enter as following format: ID, Name: Quanity\n"); FLUSH;
-			continue;
+			continue;   
 		}
 		else {
 			strcpy(temp.id, strtok(input, " ,"));
@@ -325,7 +326,7 @@ int    delete(Record r, FILE *fp) {
 	}
 }
 
-/*===========================================================
+/*=========================================================
 * get_input
 * =========================================================
 * Get user input
