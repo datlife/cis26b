@@ -210,7 +210,12 @@ void   demo(FILE *fp, Menu option) {
 		else {
 			strcpy(temp.id, strtok(input, " ,"));
 			strcpy(temp.name, strtok(NULL, ":"));
-			temp.qty = strtol(strtok(NULL, "\t\n "), NULL, 10);
+			char* id = strtok(NULL, "\t\n ");
+			if (id)
+				temp.qty = strtol(id, NULL, 10);
+			else
+				temp.qty = -1;
+
 			switch (option) {
 			case INSERT:
 				insert(temp, fp);
