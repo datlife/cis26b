@@ -69,11 +69,12 @@ int main(int argc, char *argv[]) {
 	return 0;
 }
 /*
+============================================
 init_table()
+============================================
 
-- Dynamically Allocate Array of HashNode
-- Initialize initial values.
-- write an empty hash file to bin
+Create an empty hashtable into a binary file
+
 */
 FILE *init_table(char *output_file) {
 
@@ -108,7 +109,14 @@ FILE *init_table(char *output_file) {
 	}
 	return fp;
 }
+/*
+============================================
+read_table()
+============================================
+open file from 'filename' and read into binary
+file 'table'
 
+*/
 int read_text(char *filename, FILE *table) {
 	FILE  *fp = NULL;
 	//Open a file
@@ -134,6 +142,12 @@ int read_text(char *filename, FILE *table) {
 	}
 	return 0;
 }
+/*
+============================================
+menu_driver()
+============================================
+Display main menu of the program
+*/
 void   menu_driver(FILE *fp) {
 	char buffer[INPUT_BUFFER];
 	char QUIT_SIGNAL = 0;
@@ -184,7 +198,13 @@ void   menu_driver(FILE *fp) {
 	fclose(fp);
 
 }
-
+/*
+============================================
+demo(FILE *fp, Menu option)
+============================================
+Process user input.
+Execute selected menu option( Insert, delete, search)
+*/
 void   demo(FILE *fp, Menu option) {
 	char input[INPUT_BUFFER];
 	while (1) {
@@ -219,6 +239,14 @@ void   demo(FILE *fp, Menu option) {
 		}
 	}
 }
+/*
+============================================
+record_tokenizer()
+============================================
+Token an input into: ID - Product - Quantity
+Dilimiter : , :
+This tokenizer also removes leading/trailing spaces
+*/
 void   record_tokenizer(Record *record, char *input) {
 	char *id	  = strtok(input, ",");
 	char *product = strtok(NULL, ":");
@@ -250,6 +278,17 @@ void   record_tokenizer(Record *record, char *input) {
 	if (qty != NULL)
 		record->qty = strtol(qty, NULL, 10);
 }
+/*
+============================================
+error_check()
+============================================
+Validate a Record if match the size
+ID: 4-digit only
+PRODUCTNAME : [A-Za-z ()] only
+QUANTITY: 0 < x < 2000
+
+return -1 if any of above conditions fail.
+*/
 int error_check(const Record *f) {
 	if (strspn(f->id, CHECK_ID) != ID_LEN - 1) {
 		printf("**Invalid ID**");
@@ -282,12 +321,17 @@ unsigned long hashFunc(char *key) {
 		sum += pow(key[i], 3);
 	return sum % INIT_HASH_SIZE;
 }
+/*
+============================================
+find_bucket
+============================================
+Search through hashtable to find correct bucket
 
+*/
 void find_bucket(FILE* fp, Record r, int *i, int *matched, HashNode *curr_node) {
 	unsigned long key = hashFunc(r.id);
 	fseek(fp, sizeof(HashNode)*key, SEEK_SET);	//Seek to current correct hash node
 	fread(curr_node, sizeof(HashNode), 1, fp);		   //Copy hashnode into memory
-
 	// Move to available bucket while comparing ID
 	while (*i < curr_node->num_collisions) {
 		if (strcmp(r.id, curr_node->buckets[*i].id) == 0) {
@@ -297,6 +341,12 @@ void find_bucket(FILE* fp, Record r, int *i, int *matched, HashNode *curr_node) 
 		(*i)++;
 	}
 }
+/*
+========================================
+insert()
+========================================
+Insert a record into a hash table
+*/
 int insert(Record r, FILE *fp) {
 	int i = 0, matched = -1;
 	HashNode curr_node = { "" };
@@ -327,7 +377,12 @@ int insert(Record r, FILE *fp) {
 	printf("Added %s,%-14s:%-4d into HashTable at Node %d, bucket %d\n", curr_node.buckets[i].id, curr_node.buckets[i].name,  curr_node.buckets[i].qty, hashFunc(r.id),  i+1);
 	return 0;
 }
-
+/*
+=======================================
+search()
+=======================================
+Search a record in a hash table
+*/
 int   search(Record r, FILE *fp) {
 	int i = 0, matched = -1;
 	HashNode curr_node;
@@ -343,22 +398,30 @@ int   search(Record r, FILE *fp) {
 	printf("\nRecord is not found in database.\n");
 	return -1;
 }
+/*
+=======================================
+delete()
+=======================================
+Delete a Record in a hashtable
+
+*/
 int    delete(Record r, FILE *fp) {
 	int i = 0, pos = -1;
 	HashNode curr_node;
 	find_bucket(fp, r, &i, &pos, &curr_node);
 	if (pos != -1) {
 		Record empty = { "" };
-		printf("\Deleted %s, %-14s :%-3d\n\n", curr_node.buckets[i].id, curr_node.buckets[i].name, curr_node.buckets[i].qty);
+		printf("\nDeleted %s, %-14s :%-4d \n", curr_node.buckets[i].id, curr_node.buckets[i].name, curr_node.buckets[i].qty);
 		curr_node.buckets[i] = empty;
 		int move = -1;
 		fseek(fp, sizeof(HashNode)*move, SEEK_CUR);		
 		fwrite(&curr_node, sizeof(HashNode), 1, fp);
-
 	}
 	else {
 		printf("\nRecord is not in database, so nothing is deleted.\n");
+		return -1;
 	}
+	return 0;
 }
 /*=========================================================
 * get_input
@@ -607,3 +670,5 @@ Select an option: 5
 No Memory Leak
 Press any key to continue . . .
 */
+
+
