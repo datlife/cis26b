@@ -11,7 +11,8 @@ int main(int args, char argv[])
 	// ------FUNCTION PROTOTYPES--------
 	void menu_driver(unsigned short);
 	int  update(unsigned short*, int choice);
-	void print_bit(unsigned short* lights);
+	void overlay(unsigned short*, unsigned short);
+	void print_bit(unsigned short lights);
 
 	//------ MAIN PROGRAM --------------
 	unsigned short current_lighting = 0; //set all lights to OFF
@@ -39,7 +40,7 @@ void menu_driver(unsigned short lights) {
 		fgets(input, 3, stdin);
 		if ((isdigit(input[0]) && strlen(input) == 2)) 
 		{
-			choice = strtoul(input, NULL, 0); // Conver ANSCII to number
+			choice = strtol(input, NULL, 0); // Conver ANSCII to number
 			printf("OPTION: %d\n\n", choice);
 			if (1 <= choice && choice <= 10) {
 				int okay = update(&lights, choice);
@@ -68,11 +69,25 @@ int update(unsigned short* lights, int choice) {
 	case 7:
 	case 8:
 	case 9:
+		printf("Current lighting configuration: \n");
+		printf("Update a custom configuration (pattern - location to start): ");
+		char input[16];
+		fgets(input, 16, stdin); // ERROR CHECK HERE
+		unsigned short pattern = strtol(input, NULL, 0);
+		overlay(lights, pattern);
+		break;
 	default:
 		break;
 	}
+
+	//if okay:
+	//print_bit(lights);
 	return okay;
 }
-void print_bit(unsigned short* lights) {
+void overlay(unsigned short* lights, unsigned short pattern) {
+
+}
+
+void print_bit(unsigned short lights) {
 	printf("hello");
 }
