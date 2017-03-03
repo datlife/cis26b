@@ -10,8 +10,6 @@
  3. Define and use a macro to toggle a range of bits
  4. Write a function that takes an unsigned short parameter and returns an unsigned short 
  with the bits in the parameter turned backwards. 
-
-
  *******************************************************/
 
 #include <stdio.h>
@@ -20,24 +18,22 @@
 // 2)
 #define TURN_OFF_BITS(startbit,numbits)			(unsigned short)(~((~(((unsigned short) ~0) << (numbits))) << (startbit))) //turn off a range of bits
 // 3)
-#define TOGGLE_BITS(bits, startbit, numbits)    (unsigned short)( (bits)^TURN_ON_BITS((startbits), (numbits)) )			       // toggle a range of bit
+#define TOGGLE_BITS(bits, startbit, numbits)    (unsigned short)( (bits)^TURN_ON_BITS((startbits), (numbits)) )			   // toggle a range of bit
 // 4)
-unsigned short reverse(unsigned short bits) {
+unsigned short reverse (unsigned short bits) {
 	// 11001010
-	// 00110101
-	// 
+	// 01010011
 }
-int  testbit(unsigned short wrd, int bit_to_test);
+
+int  testbit  (unsigned short wrd, int bit_to_test);
 void printbits(unsigned short wrd);
 
-int main (void)
-{
+int main (void){
     unsigned short wrd = 65, a = 32, b, mask;
     int numbits = 3;
     int startbit = 2;
     
     printbits(wrd);
-    
     mask = TURN_ON_BITS(startbit, numbits); // replace this by a macro with arguments
     b = a | mask;
     printf("Turn ON %d bits starting at bit#%d\n", numbits, startbit);
@@ -56,13 +52,12 @@ int main (void)
     printf("%d\n", b);
     
     a = 85;
-    // mask = ??? // define this mask as a macro with arguments
-    // c = ???
+	c = reverse(a);
     printf("Toggle %d bits starting at bit#%d\n", numbits, startbit);
     printf("%d\n", a);
     printbits(a);
-    printbits(b);
-    printf("%d\n", b);
+    printbits(c);
+    printf("%d\n", c);
     return 0;
 }
 

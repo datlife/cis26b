@@ -83,8 +83,8 @@ int update(unsigned short* lights, int choice) {
 		*lights &= TURN_OFF_BITS(11, 5);
 		break;
 	case 8:
-		//*lights &= TURN_OFF_BITS(0, 5);
-		*lights = TOGGLE_BITS(*lights, 0, 16);
+		*lights &= TURN_OFF_BITS(0, 5);
+		//*lights = TOGGLE_BITS(*lights, 0, 16);
 		break;
 	case 9:
 		printf("Update a custom configuration (pattern - location to start): ");
