@@ -1,6 +1,7 @@
 /*******************************************************
  Homework 4: Part A
- 
+ NAME: Dat Nguyen	
+ IDE:  Visual Studio 2015
  Biwise Operators
  
  There are three requirements:
@@ -9,17 +10,23 @@
  3. Define and use a macro to toggle a range of bits
  4. Write a function that takes an unsigned short parameter and returns an unsigned short 
  with the bits in the parameter turned backwards. 
- Thus, if the parameter has a binary value of
- 11111111111100000000000000000000
- your function will return a value whose binary representation is
- 00000000000011111111111111111111
- 
- NAME:
- IDE:
+
+
  *******************************************************/
 
 #include <stdio.h>
-
+// 1)
+#define TURN_ON_BITS(startbit,  numbits)		(unsigned short)((~(((unsigned short)~0) << (numbits))) << (startbit))     // turn on a range of bits
+// 2)
+#define TURN_OFF_BITS(startbit,numbits)			(unsigned short)(~((~(((unsigned short) ~0) << (numbits))) << (startbit))) //turn off a range of bits
+// 3)
+#define TOGGLE_BITS(bits, startbit, numbits)    (unsigned short)( (bits)^TURN_ON_BITS((startbits), (numbits)) )			       // toggle a range of bit
+// 4)
+unsigned short reverse(unsigned short bits) {
+	// 11001010
+	// 00110101
+	// 
+}
 int  testbit(unsigned short wrd, int bit_to_test);
 void printbits(unsigned short wrd);
 
@@ -31,7 +38,7 @@ int main (void)
     
     printbits(wrd);
     
-    mask = (~(((unsigned short)~0) << numbits)) << startbit; // replace this by a macro with arguments
+    mask = TURN_ON_BITS(startbit, numbits); // replace this by a macro with arguments
     b = a | mask;
     printf("Turn ON %d bits starting at bit#%d\n", numbits, startbit);
     printf("%d\n", a);
@@ -40,7 +47,7 @@ int main (void)
     printf("%d\n", b);
     
     a = 31;
-    mask = ~((~(((unsigned short) ~0) << numbits)) << startbit); // replace this by a macro with arguments
+    mask = TURN_OFF_BITS(startbit, numbits); // replace this by a macro with arguments
     b = a & mask;
     printf("Turn OFF %d bits starting at bit#%d\n", numbits, startbit);
     printf("%d\n", a);
@@ -56,7 +63,6 @@ int main (void)
     printbits(a);
     printbits(b);
     printf("%d\n", b);
-    
     return 0;
 }
 
