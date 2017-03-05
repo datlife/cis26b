@@ -9,6 +9,7 @@
 #define TURN_OFF_BITS(startbit,numbits)			(unsigned short)(~((~(((unsigned short) ~0) << (numbits))) << (startbit)))  //turn off a range of bits
 #define TOGGLE_BITS(bits, startbit, numbits)    (unsigned short)( (bits)^TURN_ON_BITS((startbit), (numbits)) )					// toggle a range of bit
 #define FLUSH									while(getchar() != '\n')
+#define NUMERIC   "0123456789"
 
 int main(int args, char argv[])
 {
@@ -53,7 +54,7 @@ void menu_driver(unsigned short lights) {
 		}
 		else {
 			printf("\n**Invalid Input, please try again.**\n");
-			FLUSH; // @BUG!!!!
+			FLUSH; 
 		}
 	} while (choice != 10);
 }
@@ -76,20 +77,20 @@ int update(unsigned short* lights, int choice) {
 	case 5: // Turn off all lights
 		*lights &= TURN_OFF_BITS(0, 16);
 		break;
-	case 6:
+	case 6:	 // Turn off center stage
 		*lights &= TURN_OFF_BITS(5, 6);
 		break;
-	case 7:
+	case 7: // Turn off left stage
 		*lights &= TURN_OFF_BITS(11, 5);
 		break;
-	case 8:
+	case 8: // Turn off right stage
 		*lights &= TURN_OFF_BITS(0, 5);
-		//*lights = TOGGLE_BITS(*lights, 0, 16);
 		break;
 	case 9:
 		printf("Update a custom configuration (pattern - location to start): ");
-		char input[16];
+		char input[16];		 // why?
 		fgets(input, 16, stdin); // ERROR CHECK HERE
+		int okay = validate_input(input);
 		unsigned short pattern = (unsigned short)strtol(input, NULL, 0);
 		overlay(lights, pattern);
 		break;
@@ -100,7 +101,19 @@ int update(unsigned short* lights, int choice) {
 	printbits(*lights);
 	return okay;
 }
+int validate_input(char *input) {
 
+	char *start_bit = strtok(input, " ");
+	char *pattern = strtok(input, "\t\n");
+	int id, pattern;
+	if (start_bit) {
+		start_bit[strspn(start_bit, NUMERIC)] = 0;
+		strtol(start_bit, NULL, 0);
+	}
+	if (pattern) {
+
+	}
+}
 void overlay(unsigned short* lights, unsigned short pattern) {
 
 }
