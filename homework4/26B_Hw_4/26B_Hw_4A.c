@@ -80,6 +80,14 @@ int main(void) {
 	return 0;
 }
 
+int revserse(unsigned short wrd) {
+	unsigned short masked = 0;
+	for (int i = 0; i < sizeof(wrd); i++) {
+		if (testbit(wrd, i) == 1)
+			masked |= 1;
+		masked <<= 1;
+	}
+}
 /**************************************************************
 Return 1 if bit_to_test is set and 0 if it is unset
 */
