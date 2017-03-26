@@ -10,6 +10,9 @@ Binary Search Tree header file
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <ctype.h>
 
 #define MAX_LEN 200
 #define FLUSH while( getchar()!= '\n') 
@@ -25,5 +28,6 @@ typedef struct nodeTag {
 NODE *buildTree(char *input_file);
 int   insert(NODE **root, char *target);
 void  printTreeInorder(NODE *root);
-
+void tokenize_line(char *a_line, char *comment_signal);
+void deleteIrrelavantParts(char *curr_line);
 #endif // ! BST_HEADER_
