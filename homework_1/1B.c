@@ -159,7 +159,6 @@ void   save_file(char  *filename, STOCK *file, int size) {
 	// Open file in writing mode, remmber using wx
 	FILE  *fp;
 	//Open a file
-	//Open a file
 	if (strcmp(filename, "") != 0) fp = fopen(filename, "r");
 	else {
 		fp = fopen(OUTPUT_PATH, "r");

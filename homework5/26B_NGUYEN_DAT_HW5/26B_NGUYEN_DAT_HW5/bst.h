@@ -13,21 +13,30 @@ Binary Search Tree header file
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include "queue.h"
 
 #define MAX_LEN 200
 #define FLUSH while( getchar()!= '\n') 
 
 typedef struct nodeTag {
-	char data;
-	struct nodeTag *left;
-	struct nodeTag *right;
+	char *data;
+	QueueNode *front, *rear;
+	struct nodeTag *left, *right;
 	int count;
 }NODE;
 
 // Function Declarations
-NODE *buildTree(char *input_file);
-int   insert(NODE **root, char *target);
+NODE *buildTree(char *input_file, FILE *fp);
+int   insert(NODE **root, char *target, int curr_line);
 void  printTreeInorder(NODE *root);
-void tokenize_line(char *a_line, char *comment_signal);
-void deleteIrrelavantParts(char *curr_line);
+void  printNode(NODE *);
+void  printTreeInorderToFile(NODE *root, FILE *);
+void  printNodeToFile(NODE *, FILE *);
+
+void  destroyTree(NODE *root);
+void  destroyNode(NODE *node);
+
+// Helper functions to build a trees
+void  tokenize_line(char *a_line, int curr_line, NODE **tree);
+void  remove_pattern(char *curr_line, char start_dilimeter, char end_dilimiter);  //remove "..." and <...>
 #endif // ! BST_HEADER_

@@ -5,7 +5,6 @@
 #define MAXCITIES 100
 #define MAXLINE    80
  
-/* Comment */
 	  struct weather
 	  {
 	      char *statecity;
